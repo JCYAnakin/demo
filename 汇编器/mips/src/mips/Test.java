@@ -1,3 +1,9 @@
+/*
+created by Chenyang Ji, sophomore.
+a mips assembler, and you can even run
+some simple mips codes and also debug
+using this tool!
+*/
 package mips;
 import javax.swing.*;
 import javax.swing.event.*;
