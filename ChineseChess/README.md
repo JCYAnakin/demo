@@ -1,4 +1,5 @@
 # chess
+Created by Chenyang Ji, Chaoqi Wang, Qiubin Yu, Yujing Yang, July, 2015.
 this file explains the files lies in each folder.
 ##UI##
 1. this is the main project file, including the mainwindow model and welcome window model.
