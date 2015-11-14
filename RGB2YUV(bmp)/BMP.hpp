@@ -3,7 +3,7 @@
 
 #include <iostream>
 using namespace::std;
-typedef struct
+typedef struct                          //4*2+2*2+2=14
 {
     //unsigned short type;
     unsigned int size;
@@ -14,8 +14,8 @@ typedef struct
 typedef struct
 {
     unsigned int infoSize;//信息头大小       4*9+2*2 = 40
-    unsigned int width;//图像宽度
-    unsigned int height;//图像高度
+    unsigned int col;//图像宽度
+    unsigned int row;//图像高度
     unsigned short planes;//位平面数，必须为1
     unsigned short bitCount;//每像素位数
     unsigned int  compressionType; //压缩类型
@@ -66,6 +66,7 @@ public:
     void writeData(FILE* fpw);
     void toGrew(FILE* fpw);
     void toRGB(FILE* fpw);
+    void binarization(FILE* fp);
 };
 
 #endif /* BMP_hpp */

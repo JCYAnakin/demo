@@ -17,8 +17,8 @@ void BMP::getInfo(FILE* fp)
 void BMP::showInfo()
 {
     cout<<"size:"<<thisInfo.infoSize<<endl;
-    cout<<"width:"<<thisInfo.width<<endl;
-    cout<<"height:"<<thisInfo.height<<endl;
+    cout<<"col:"<<thisInfo.col<<endl;
+    cout<<"row:"<<thisInfo.row<<endl;
     cout<<"planes:"<<thisInfo.planes<<endl;
     cout<<"bitCounts:"<<thisInfo.bitCount<<endl;
     cout<<"compressType:"<<thisInfo.compressionType<<endl;
@@ -50,8 +50,8 @@ void BMP::showData()
 {
     for (int i = 0; i < thisInfo.imageSize / 3; i++) {
         cout<<"B:"<<(int)thisData[i].blue<<" "
-            <<"G:"<<(int)thisData[i].green<<" "
-            <<"R:"<<(int)thisData[i].red<<endl;
+        <<"G:"<<(int)thisData[i].green<<" "
+        <<"R:"<<(int)thisData[i].red<<endl;
     }
 }
 void BMP::allocateData()
@@ -97,6 +97,8 @@ void BMP::toGrew(FILE* fpw)
 {
     unsigned short BMPIndicator= 0x4d42;
     fwrite(&BMPIndicator,1,sizeof(unsigned short),fpw);
+    //thisInfo.imageSize = thisInfo.col*thisInfo.row*3;
+    //thisHead.size = thisInfo.imageSize+54;
     fwrite(&thisHead,1,sizeof(head),fpw);
     fwrite(&thisInfo,1,sizeof(information),fpw);
     
@@ -104,24 +106,40 @@ void BMP::toGrew(FILE* fpw)
     
     int i = 0, j = 0;
     cout<<"here!!!";
+
+//    unsigned int nBytesInRow = ((3 * thisInfo.col + 3)/4) * 4;
+//    unsigned int numPadBytes = nBytesInRow - 3 * thisInfo.col; // need this many
+//    int position = 0;//i*thisInfo.height+j;
+//    for(int i = 0; i < thisInfo.row; i++)
+//    {
+//        for(int j = 0; j < thisInfo.col; j++)
+//        {
+//            thisYUV[position].Y =(((66 * thisData[position].red + 129*thisData[position].green + 25*thisData[position].blue+128)>>8)+16);
+//            thisYUV[position].U = ((-38 * thisData[position].red -74*thisData[position].green + 112*thisData[position].blue+128)>>8)+128;
+//            thisYUV[position].V = ((112 * thisData[position].red -94*thisData[position].green -18*thisData[position].blue+128)>>8)+128;
+//            if (thisYUV[position].Y <= 0) {
+//                thisYUV[position].Y = 0;
+//            }
+//            else if(thisYUV[position].Y>255)
+//            {
+//                thisYUV[position].Y = 255;
+//            }
+//            fwrite(&(thisYUV[position].Y), 1, sizeof(unsigned char), fpw);
+//            fwrite(&(thisYUV[position].Y), 1, sizeof(unsigned char), fpw);
+//            fwrite(&(thisYUV[position].Y), 1, sizeof(unsigned char), fpw);
+//            position+=1;
+//        }
+//        for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+//        {
+//            position+=1;
+//        }
+//    }
     while(true){
         if(j >= thisInfo.imageSize)
             break;
-        
-        //0.256788 * R + 0.504129 * G + 0.097906 * B
-        //-0.148223 * R - 0.290993 * G + 0.439216 * B
-        //0.439216 * R - 0.367788 * G - 0.071427 * B
-        
-//        thisYUV[i].Y = (0.256788 * thisData[i].red + 0.504129*thisData[i].green + 0.097906*thisData[i].blue)+16;
-//        thisYUV[i].U = (-0.148223 * thisData[i].red -0.290993*thisData[i].green + 0.439216*thisData[i].blue)+128;
-//        thisYUV[i].V = (0.439216 * thisData[i].red -0.367788*thisData[i].green -0.071427*thisData[i].blue)+128;
-        
-    
         thisYUV[i].Y = (((66 * thisData[i].red + 129*thisData[i].green + 25*thisData[i].blue+128)>>8)+16);
         thisYUV[i].U = ((-38 * thisData[i].red -74*thisData[i].green + 112*thisData[i].blue+128)>>8)+128;
         thisYUV[i].V = ((112 * thisData[i].red -94*thisData[i].green -18*thisData[i].blue+128)>>8)+128;
-        
-        
         if (thisYUV[i].Y <= 0) {
             thisYUV[i].Y = 0;
         }
@@ -145,7 +163,8 @@ void BMP::toGrew(FILE* fpw)
         
         ++i;
     }
-   
+    
+    
 }
 
 void BMP::toRGB(FILE* fpw)
@@ -171,9 +190,9 @@ void BMP::toRGB(FILE* fpw)
         int D = thisYUV[i].U - 128;
         int E = thisYUV[i].V - 128;
         int tmpR, tmpG, tmpB;
-//        tmpR = 1.164383 * C                   + 1.596027 * E;//( 298 * C + 409 * E + 128) >> 8;
-//        tmpG = 1.164383 * C - (0.391762 * D) - (0.812968 * E);//( 298 * C - 100 * D - 208 * E + 128) >> 8;
-//        tmpB = 1.164383 * C +  2.017232 * D;//( 298 * C + 516 * D + 128) >> 8;
+        //        tmpR = 1.164383 * C                   + 1.596027 * E;//( 298 * C + 409 * E + 128) >> 8;
+        //        tmpG = 1.164383 * C - (0.391762 * D) - (0.812968 * E);//( 298 * C - 100 * D - 208 * E + 128) >> 8;
+        //        tmpB = 1.164383 * C +  2.017232 * D;//( 298 * C + 516 * D + 128) >> 8;
         
         tmpR = ( 298 * C + 409 * E + 128) >> 8;
         tmpG = ( 298 * C - 100 * D - 208 * E + 128) >> 8;
@@ -207,4 +226,8 @@ void BMP::toRGB(FILE* fpw)
         
         ++i;
     }
+}
+void BMP::binarization(FILE *fpw)
+{
+    
 }
