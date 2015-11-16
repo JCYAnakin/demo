@@ -5,9 +5,17 @@ using namespace std;
 int main(int argc, const char * argv[]) {
     BMP bmp;
     short ch;
-    FILE *fp = fopen("/Users/jason/Xcode/BMPDemo/Demo/test4.bmp", "rb");
-    FILE *fpw = fopen("/Users/jason/Xcode/BMPDemo/Demo/grewOut.bmp", "wb");
+    FILE *fp = fopen("/Users/jason/Xcode/BMPDemo/Demo/test2.bmp", "rb");
+    FILE *fpw = fopen("/Users/jason/Xcode/BMPDemo/Demo/grayOut.bmp", "wb");
     FILE *fpw2 = fopen("/Users/jason/Xcode/BMPDemo/Demo/OriginalOut.bmp", "wb");
+    FILE *fpw3 = fopen("/Users/jason/Xcode/BMPDemo/Demo/binOut.bmp", "wb");
+    FILE *fpw4 = fopen("/Users/jason/Xcode/BMPDemo/Demo/dilationOut.bmp", "wb");
+    FILE *fpw5 = fopen("/Users/jason/Xcode/BMPDemo/Demo/erosionOut.bmp", "wb");
+    FILE *fpw6 = fopen("/Users/jason/Xcode/BMPDemo/Demo/openingTmp.bmp", "wb");
+    FILE *fpw7 = fopen("/Users/jason/Xcode/BMPDemo/Demo/openingOut.bmp", "wb");
+    FILE *fpw8 = fopen("/Users/jason/Xcode/BMPDemo/Demo/closingTmp.bmp", "wb");
+    FILE *fpw9 = fopen("/Users/jason/Xcode/BMPDemo/Demo/closingOut.bmp", "wb");
+    FILE *fpw10 = fopen("/Users/jason/Xcode/BMPDemo/Demo/hmtOut.bmp", "wb");
     fread(&ch, 1, sizeof(short), fp);
     cout<<ch<<endl;
     
@@ -23,30 +31,20 @@ int main(int argc, const char * argv[]) {
     bmp.showInfo();
     
     //bmp.getPalette(fp);
-    bmp.allocateData();
+    //bmp.allocateData();
     //bmp.showData();
     bmp.getData(fp);
     //bmp.showData();
-    //to grew
-    bmp.toGrew(fpw);
-    //bmp.writeData(fpw);
+    //to gray
+    bmp.toGray(fpw);
     //get back to the original graph..
-    bmp.toRGB(fpw2);
-    
-    //#####binarization
-    BMP bmp2;
-    FILE *fp2 = fopen("/Users/jason/Xcode/BMPDemo/Demo/grewOut.bmp", "rb");
-    FILE *fpw3 = fopen("/Users/jason/Xcode/BMPDemo/Demo/binOut.bmp", "wb");
-    fread(&ch, 1, sizeof(short), fp2);
-    cout<<ch<<endl;
-    if(ch != 0x4d42){
-        cout<<"the file is not a bmp file!"<<endl;
-        return 0;
-    }
-    bmp2.getHead(fp2);
-    bmp2.getInfo(fp2);
-    bmp2.allocateData();
-    bmp2.getData(fp2);
-    bmp2.binarization(fpw3);
-    
+    //bmp.toRGB(fpw2);
+    //binarization
+    bmp.binarizationALL(fpw3);
+    //bmp.binarization(fpw3);
+    bmp.dilation(fpw4, bmp.binList);
+    bmp.erosion(fpw5, bmp.binList);
+    bmp.opening(fpw6, fpw7);
+    bmp.closing(fpw8, fpw9);
+    bmp.hmt(fpw10);
 }

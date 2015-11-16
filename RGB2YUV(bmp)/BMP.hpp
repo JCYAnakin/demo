@@ -50,9 +50,17 @@ public:
     head thisHead;
     information thisInfo;
     palette thisPalette[256];
-    data* thisData;
-    yuv* thisYUV;
-    
+    //data* thisData;
+    unsigned char* rList;
+    unsigned char* gList;
+    unsigned char* bList;
+    //yuv* thisYUV;
+    int* yList;
+    int* uList;
+    int* vList;
+    unsigned char* binList;
+    unsigned char* dilationList;
+    unsigned char* erosionList;
     
     void getHead(FILE* fp);
     void getInfo(FILE* fp);
@@ -62,11 +70,16 @@ public:
     void showInfo();
     void showPalette();
     void showData();
-    void allocateData();
     void writeData(FILE* fpw);
-    void toGrew(FILE* fpw);
+    void toGray(FILE* fpw);
     void toRGB(FILE* fpw);
     void binarization(FILE* fp);
+    void binarizationALL(FILE* fp);
+    void dilation(FILE* fp, unsigned char* dataIn);
+    void erosion(FILE* fp, unsigned char* dataIn);
+    void opening(FILE* fpwTmp, FILE* fpw);
+    void closing(FILE* fpwTmp, FILE* fpw);
+    void hmt(FILE* fpw);
 };
 
 #endif /* BMP_hpp */
