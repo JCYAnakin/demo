@@ -6,103 +6,53 @@
 //  Copyright (c) 2014 Matthew Tesfaldet. All rights reserved.
 //
 
-#ifndef TankSim_Skybox_h
-#define TankSim_Skybox_h
-
+#ifndef Skybox_h
+#define Skybox_h
 class Skybox {
 private:
-  int textureID[6];
-  RGBpixmap skybox_pixelMap[6];
-  char skybox_fileName[6][100] =
-  {};
-  
-  GLfloat mat_ambient[4];
-  GLfloat mat_specular[4];
-  GLfloat mat_diffuse[4];
-  GLfloat mat_shininess[1];
-  
-public:
-  Skybox(int textureID[6], const char** fileName) {
-    this->textureID[0] = textureID[0];
-    this->textureID[1] = textureID[1];
-    this->textureID[2] = textureID[2];
-    this->textureID[3] = textureID[3];
-    this->textureID[4] = textureID[4];
-    this->textureID[5] = textureID[5];
-    
-    strncpy(skybox_fileName[0], fileName[0], 100);
-    skybox_fileName[0][99] = '\0';
-    strncpy(skybox_fileName[1], fileName[1], 100);
-    skybox_fileName[1][99] = '\0';
-    strncpy(skybox_fileName[2], fileName[2], 100);
-    skybox_fileName[2][99] = '\0';
-    strncpy(skybox_fileName[3], fileName[3], 100);
-    skybox_fileName[3][99] = '\0';
-    strncpy(skybox_fileName[4], fileName[4], 100);
-    skybox_fileName[4][99] = '\0';
-    strncpy(skybox_fileName[5], fileName[5], 100);
-    skybox_fileName[5][99] = '\0';
-    
-    // Setup the material
-    mat_ambient[0] = 0.0;
-    mat_ambient[1] = 0.0;
-    mat_ambient[2] = 0.0;
-    mat_ambient[3] = 1.0;
-    mat_specular[0] = 1.0;
-    mat_specular[1] = 1.0;
-    mat_specular[2] = 1.0;
-    mat_specular[3] = 1.0;
-    mat_diffuse[0] = 1.0;
-    mat_diffuse[1] = 1.0;
-    mat_diffuse[2] = 1.0;
-    mat_diffuse[3] = 1.0;
-    mat_shininess[0] = 0.0;
+    //material
+    GLfloat matAmbient[4]={0.0,0.0,0.0,1.0};
+    GLfloat matSpecular[4] = {1.0,1.0,1.0,1.0};
+    GLfloat matDiffuse[4] = {1.0,1.0,1.0,1.0};
+    GLfloat matShininess[1] = {0.0};
 
-  };
+    int textureNum[6] = {1,2,3,4,5,6};
+    RGBpixmap skyPixelStore[6];
+    char skyboxFileName[6][100] ={"/Users/jason/Xcode/MyWorld/textures/back.bmp", "/Users/jason/Xcode/MyWorld/textures/left.bmp","/Users/jason/Xcode/MyWorld/textures/front.bmp","/Users/jason/Xcode/MyWorld/textures/right.bmp","/Users/jason/Xcode/MyWorld/textures/top.bmp","/Users/jason/Xcode/MyWorld/textures/bottom.bmp"};
   
-  void setTextures() {
-    readBMPFile(&skybox_pixelMap[0], skybox_fileName[0]);
-    setTexture(&skybox_pixelMap[0], textureID[0]);
-    readBMPFile(&skybox_pixelMap[1], skybox_fileName[1]);
-    setTexture(&skybox_pixelMap[1], textureID[1]);
-    readBMPFile(&skybox_pixelMap[2], skybox_fileName[2]);
-    setTexture(&skybox_pixelMap[2], textureID[2]);
-    readBMPFile(&skybox_pixelMap[3], skybox_fileName[3]);
-    setTexture(&skybox_pixelMap[3], textureID[3]);
-    readBMPFile(&skybox_pixelMap[4], skybox_fileName[4]);
-    setTexture(&skybox_pixelMap[4], textureID[4]);
-    readBMPFile(&skybox_pixelMap[5], skybox_fileName[5]);
-    setTexture(&skybox_pixelMap[5], textureID[5]);
+    
+public:
+    void setTextures() {
+        for(int i = 0; i < 6; i++)
+        {
+            //readBMPFile(skyPixelStore[i], skyboxFileName[i]);
+            readBMPFile(&skyPixelStore[i], skyboxFileName[i]);
+            setTexture(&skyPixelStore[i], textureNum[i]);
+        }
   }
     
   void DrawSkybox(float lookFromx, float lookFromy, float lookFromz, float upx, float upy, float upz, bool flag) {
-    // Store the current matrix
     glPushMatrix();
-    
-    // Reset and transform the matrix.
     glLoadIdentity();
     if(flag)
-        gluLookAt(0,0,0,
-              lookFromx, -lookFromy, lookFromz,
-              upx, upy, upz);
+        gluLookAt(0,0,0, lookFromx, -lookFromy, lookFromz, upx, upy, upz);
     
-    // Enable/Disable features
     glPushAttrib(GL_ENABLE_BIT);
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
 //    glDisable(GL_LIGHTING);
     glDisable(GL_BLEND);
     
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_ambient);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, mat_shininess);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, matAmbient);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, matSpecular);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, matDiffuse);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, matShininess);
     
     // Just in case we set all vertices to white.
     glColor4f(1,1,1,1);
     
     // Render the front quad
-    glBindTexture(GL_TEXTURE_2D, textureID[0]);
+    glBindTexture(GL_TEXTURE_2D, textureNum[0]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex3f(  0.5f, -0.5f, -0.5f );
@@ -115,7 +65,7 @@ public:
     glEnd();
     
     // Render the left quad
-    glBindTexture(GL_TEXTURE_2D, textureID[1]);
+    glBindTexture(GL_TEXTURE_2D, textureNum[1]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex3f(  0.5f, -0.5f,  0.5f );
@@ -128,7 +78,7 @@ public:
     glEnd();
     
     // Render the back quad
-    glBindTexture(GL_TEXTURE_2D, textureID[2]);
+    glBindTexture(GL_TEXTURE_2D, textureNum[2]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex3f( -0.5f, -0.5f,  0.5f );
@@ -141,7 +91,7 @@ public:
     glEnd();
     
     // Render the right quad
-    glBindTexture(GL_TEXTURE_2D, textureID[3]);
+    glBindTexture(GL_TEXTURE_2D, textureNum[3]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex3f( -0.5f, -0.5f, -0.5f );
@@ -154,7 +104,7 @@ public:
     glEnd();
     
     // Render the top quad
-    glBindTexture(GL_TEXTURE_2D, textureID[4]);
+    glBindTexture(GL_TEXTURE_2D, textureNum[4]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 1);
     glVertex3f( -0.5f,  0.5f, -0.5f );
@@ -167,7 +117,7 @@ public:
     glEnd();
     
     // Render the bottom quad
-    glBindTexture(GL_TEXTURE_2D, textureID[5]);
+    glBindTexture(GL_TEXTURE_2D, textureNum[5]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
     glVertex3f( -0.5f, -0.5f, -0.5f );
@@ -185,27 +135,27 @@ public:
   };
   
   void setTextureID(int ID[6]) {
-      textureID[0] = ID[0];
-      textureID[1] = ID[1];
-      textureID[2] = ID[2];
-      textureID[3] = ID[3];
-      textureID[4] = ID[4];
-      textureID[5] = ID[5];
+      textureNum[0] = ID[0];
+      textureNum[1] = ID[1];
+      textureNum[2] = ID[2];
+      textureNum[3] = ID[3];
+      textureNum[4] = ID[4];
+      textureNum[5] = ID[5];
   };
   
   void setFileName(const char** fileName) {
-    strncpy(skybox_fileName[0], fileName[0], 100);
-    skybox_fileName[0][99] = '\0';
-    strncpy(skybox_fileName[1], fileName[1], 100);
-    skybox_fileName[1][99] = '\0';
-    strncpy(skybox_fileName[2], fileName[2], 100);
-    skybox_fileName[2][99] = '\0';
-    strncpy(skybox_fileName[3], fileName[3], 100);
-    skybox_fileName[3][99] = '\0';
-    strncpy(skybox_fileName[4], fileName[4], 100);
-    skybox_fileName[4][99] = '\0';
-    strncpy(skybox_fileName[5], fileName[5], 100);
-    skybox_fileName[5][99] = '\0';
+    strncpy(skyboxFileName[0], fileName[0], 100);
+    skyboxFileName[0][99] = '\0';
+    strncpy(skyboxFileName[1], fileName[1], 100);
+    skyboxFileName[1][99] = '\0';
+    strncpy(skyboxFileName[2], fileName[2], 100);
+    skyboxFileName[2][99] = '\0';
+    strncpy(skyboxFileName[3], fileName[3], 100);
+    skyboxFileName[3][99] = '\0';
+    strncpy(skyboxFileName[4], fileName[4], 100);
+    skyboxFileName[4][99] = '\0';
+    strncpy(skyboxFileName[5], fileName[5], 100);
+    skyboxFileName[5][99] = '\0';
   }
 };
 

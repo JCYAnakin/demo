@@ -1,5 +1,5 @@
-#ifndef __CityBuilder2__ObjMesh__
-#define __CityBuilder2__ObjMesh__
+#ifndef __CityBuilder2__MyObj__
+#define __CityBuilder2__MyObj__
 
 class Point2D {
 public:
@@ -13,7 +13,7 @@ public:
     float x, y;
 };
 
-class ObjMesh {
+class MyObj {
 public:
     Vector3D *vertices = NULL;
     Vector3D *normals = NULL;
@@ -47,16 +47,16 @@ public:
     bool use_center_x_translate = false; //test
     
     //Functions
-    ObjMesh (std::vector<Vector3D> &vertices,std::vector<Vector3D> &normals,std::vector<GLuint> &indices, std::vector<GLuint> &normal_indices);
+    MyObj (std::vector<Vector3D> &vertices,std::vector<Vector3D> &normals,std::vector<GLuint> &indices, std::vector<GLuint> &normal_indices);
     void draw ();
     void setTextureMapID (int textureID);
     void setTextuteCoordinates(std::vector<Point2D> &tex_cord, std::vector<GLuint> &indicies);
 };
 
 
-void load_obj (std::string filename, ObjMesh **mesh);
+void load_obj (std::string filename, MyObj **mesh);
 
-#endif /* defined(__CityBuilder2__ObjMesh__) */
+#endif /* defined(__CityBuilder2__MyObj__) */
 
 
 

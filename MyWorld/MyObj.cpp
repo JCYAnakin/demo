@@ -7,11 +7,11 @@
 #include <stdio.h>
 #include <vector>
 #include "VectorAndPoint.h"
-#include "ObjMesh.h"
+#include "MyObj.h"
 
 using namespace std;
 
-ObjMesh :: ObjMesh (vector<Vector3D> &vertices,vector<Vector3D> &normals,vector<GLuint> &indices, vector<GLuint> &normal_indices){
+MyObj :: MyObj (vector<Vector3D> &vertices,vector<Vector3D> &normals,vector<GLuint> &indices, vector<GLuint> &normal_indices){
     this->num_of_vertices = (int) vertices.size();
     this->num_of_normals = (int) normals.size();
     this->num_of_indices = (int) indices.size();
@@ -48,12 +48,12 @@ ObjMesh :: ObjMesh (vector<Vector3D> &vertices,vector<Vector3D> &normals,vector<
     this->center.z = this->center.z / num_of_vertices;
 };
 
-void ObjMesh :: setTextuteCoordinates(std::vector<Point2D> &tex_cord, std::vector<GLuint> &indicies) {
+void MyObj :: setTextuteCoordinates(std::vector<Point2D> &tex_cord, std::vector<GLuint> &indicies) {
     this->texture_coordinates = &tex_cord[0];
     this->texture_indices = &indicies[0];
 }
 
-void ObjMesh :: draw() {
+void MyObj :: draw() {
     //Material Properties
     glMaterialfv(GL_FRONT, GL_AMBIENT, this->mat_ambient);
     glMaterialfv(GL_FRONT, GL_SPECULAR, this->mat_specular);
@@ -75,7 +75,7 @@ void ObjMesh :: draw() {
     }
     
     glRotatef(this->angles.z, 0, 0, 1);
-    glScalef(this->scaleFactor.x*0.001, this->scaleFactor.y*0.001, this->scaleFactor.z*0.001);
+    glScalef(this->scaleFactor.x, this->scaleFactor.y, this->scaleFactor.z);
     
     //Rendering
     glBindTexture(GL_TEXTURE_2D, this->textureID);
@@ -136,7 +136,7 @@ void ObjMesh :: draw() {
     glPopMatrix();
 };
 
-void ObjMesh :: setTextureMapID (int textureID) {
+void MyObj :: setTextureMapID (int textureID) {
     this->textureID = textureID;
 }
 
@@ -145,7 +145,7 @@ void ObjMesh :: setTextureMapID (int textureID) {
  Texture cordinates 
  normal cordinates
  */
-void load_obj (string filename, ObjMesh **mesh) {
+void load_obj (string filename, MyObj **mesh) {
     ifstream myFile;
     string line;
     string delimiter = "/";
@@ -230,7 +230,7 @@ void load_obj (string filename, ObjMesh **mesh) {
         printf("Unable to open %s\n",filename.c_str());
     }
     
-    (*mesh) = new ObjMesh(*vertices,*normals,*indices, *normal_indices);
+    (*mesh) = new MyObj(*vertices,*normals,*indices, *normal_indices);
     
     if (is_text_cord) {
         (*mesh)->setTextuteCoordinates(*tex_cord,*tex_indices);

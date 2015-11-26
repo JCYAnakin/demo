@@ -4,38 +4,22 @@
 #include <iostream>
 using namespace std;
 
-typedef struct RGB
+typedef struct
 {
-    unsigned char r,g,b;
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
 } RGB;
 
-typedef struct RGBpixmap
+typedef struct
 {
-    int nRows, nCols;
+    int nRows;
+    int nCols;
     RGB *pixel;
 } RGBpixmap;
 
-unsigned short getShort(FILE *fp) //helper function
-{
-    char ic;
-    unsigned short ip;
-    ic = fgetc(fp); ip = ic;  //first byte is little one
-    ic = fgetc(fp);  ip |= ((unsigned short)ic << 8); // or in high order byte
-    return ip;
-}
-unsigned long getLong(FILE *fp) //helper function
-{
-    unsigned long ip = 0;
-    char ic = 0;
-    unsigned char uc = ic;
-    ic = fgetc(fp); uc = ic; ip = uc;
-    ic = fgetc(fp); uc = ic; ip |=((unsigned long)uc << 8);
-    ic = fgetc(fp); uc = ic; ip |=((unsigned long)uc << 16);
-    ic = fgetc(fp); uc = ic; ip |=((unsigned long)uc << 24);
-    return ip;
-}
-
-
+unsigned short getShort(FILE *fp);
+unsigned long getLong(FILE *fp);
 void readBMPFile(RGBpixmap *pm, char *file)
 {
     FILE *fp;
@@ -48,8 +32,7 @@ void readBMPFile(RGBpixmap *pm, char *file)
     /* open the file */
     if ((fp = fopen(file,"rb")) == NULL)
     {
-        printf("Error opening file %s.\n",file);
-        perror("The following error occured: ");
+        printf("cannot open file %s.\n",file);
         exit(1);
     }
     
@@ -115,4 +98,23 @@ void setTexture(RGBpixmap *p, GLuint textureID)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, p->nCols, p->nRows, 0, GL_RGB,
                  GL_UNSIGNED_BYTE, p->pixel);
     
+}
+unsigned long getLong(FILE *fp) //helper function
+{
+    unsigned long ip = 0;
+    char ic = 0;
+    unsigned char uc = ic;
+    ic = fgetc(fp); uc = ic; ip = uc;
+    ic = fgetc(fp); uc = ic; ip |=((unsigned long)uc << 8);
+    ic = fgetc(fp); uc = ic; ip |=((unsigned long)uc << 16);
+    ic = fgetc(fp); uc = ic; ip |=((unsigned long)uc << 24);
+    return ip;
+}
+unsigned short getShort(FILE *fp) //helper function
+{
+    char ic;
+    unsigned short ip;
+    ic = fgetc(fp); ip = ic;  //first byte is little one
+    ic = fgetc(fp);  ip |= ((unsigned short)ic << 8); // or in high order byte
+    return ip;
 }
