@@ -11,50 +11,54 @@
 
 using namespace std;
 
-MyObj :: MyObj (vector<Vector3D> &vertices,vector<Vector3D> &normals,vector<GLuint> &indices, vector<GLuint> &normal_indices){
-    this->num_of_vertices = (int) vertices.size();
-    this->num_of_normals = (int) normals.size();
-    this->num_of_indices = (int) indices.size();
-    
-    this->vertices = &vertices[0];
-    this->normals = &normals[0];
-    this->indices = &indices[0];
-    this->normal_indices = &normal_indices[0];
-    
-    this->mat_ambient[0] = 0.0;
-    this->mat_ambient[1] = 0.05;
-    this->mat_ambient[2] = 0.0;
-    this->mat_ambient[3] = 1.0;
-    this->mat_specular[0] = 0.0;
-    this->mat_specular[1] = 0.0;
-    this->mat_specular[2] = 0.004;
-    this->mat_specular[3] = 1.0;
-    this->mat_diffuse[0] = 0.5;
-    this->mat_diffuse[1] = 0.5;
-    this->mat_diffuse[2] = 0.5;
-    this->mat_diffuse[3] = 1.0;
-    this->mat_shininess[0] = 0;
-    
-    this->translation.x = this->translation.y = this->translation.z = 0.6f;
-    this->scaleFactor.x = this->scaleFactor.y = this->scaleFactor.z = 1.0f;
-    this->angles.x = this->angles.y = this->angles.z = 0.0f;
-    
-    for(int i =0; i < this->num_of_vertices; i++){
-        this->center += vertices[i];
-    }
-    
-    this->center.x = this->center.x / num_of_vertices;
-    this->center.y = this->center.y / num_of_vertices;
-    this->center.z = this->center.z / num_of_vertices;
+void MyObj::makeMove (Vector3D position)
+{
+    translation.x += position.x;
+    translation.y += position.y;
+    translation.z += position.z;
 };
-
-void MyObj :: setTextuteCoordinates(std::vector<Point2D> &tex_cord, std::vector<GLuint> &indicies) {
-    this->texture_coordinates = &tex_cord[0];
-    this->texture_indices = &indicies[0];
+void MyObj::makeScale(Vector3D scale)
+{
+    scaleFactor.x*=scale.x;
+    scaleFactor.y*=scale.y;
+    scaleFactor.z*=scale.z;
+}
+void MyObj::makeRotate(Vector3D rotate)
+{
+    rotateFactor.x+=rotate.x;
+    rotateFactor.y+=rotate.y;
+    rotateFactor.z+=rotate.z;
 }
 
-void MyObj :: draw() {
-    //Material Properties
+void MyObj :: setTextute(std::vector<Point2D> &tex_cord, std::vector<GLuint> &indicies)
+{
+    texture_coordinates = &tex_cord[0];
+    texture_indices = &indicies[0];
+}
+void MyObj::setMatAmbient(float x0, float x1, float x2, float x3)
+{
+    mat_ambient[0] = x0;
+    mat_ambient[1] = x1;
+    mat_ambient[2] = x2;
+    mat_ambient[3] = x3;
+}
+void MyObj::setMatSpecular(float x0, float x1, float x2, float x3)
+{
+    mat_specular[0] = x0;
+    mat_specular[1] = x1;
+    mat_specular[2] = x2;
+    mat_specular[3] = x3;
+}
+void MyObj::setMatdiffuse(float x0, float x1, float x2, float x3)
+{
+    mat_diffuse[0] = x0;
+    mat_diffuse[1] = x1;
+    mat_diffuse[2] = x2;
+    mat_diffuse[3] = x3;
+}
+void MyObj :: draw()
+{
+    //Material
     glMaterialfv(GL_FRONT, GL_AMBIENT, this->mat_ambient);
     glMaterialfv(GL_FRONT, GL_SPECULAR, this->mat_specular);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, this->mat_diffuse);
@@ -65,16 +69,9 @@ void MyObj :: draw() {
     //Transformations
     glTranslatef(this->translation.x, this->translation.y, this->translation.z);
     
-    glRotatef(this->angles.y, 0, 1, 0);
-    if (use_center_x_translate) {
-       glTranslatef(center.x, center.y, center.z);
-       glRotatef(this->angles.x, 1, 0, 0);
-       glTranslatef(-center.x, -center.y, -center.z);
-    } else {
-       glRotatef(this->angles.x, 1, 0, 0);
-    }
-    
-    glRotatef(this->angles.z, 0, 0, 1);
+    glRotatef(this->rotateFactor.x, 1, 0, 0);
+    glRotatef(this->rotateFactor.y, 0, 1, 0);
+    glRotatef(this->rotateFactor.z, 0, 0, 1);
     glScalef(this->scaleFactor.x, this->scaleFactor.y, this->scaleFactor.z);
     
     //Rendering
@@ -140,11 +137,6 @@ void MyObj :: setTextureMapID (int textureID) {
     this->textureID = textureID;
 }
 
-/*Loads the .obj file into the application
- requires all faces to be Trianles
- Texture cordinates 
- normal cordinates
- */
 void load_obj (string filename, MyObj **mesh) {
     ifstream myFile;
     string line;
@@ -233,6 +225,6 @@ void load_obj (string filename, MyObj **mesh) {
     (*mesh) = new MyObj(*vertices,*normals,*indices, *normal_indices);
     
     if (is_text_cord) {
-        (*mesh)->setTextuteCoordinates(*tex_cord,*tex_indices);
+        (*mesh)->setTextute(*tex_cord,*tex_indices);
     }
 };

@@ -109,5 +109,16 @@ public:
         }
 	}
 };
+class Point2D {
+public:
+    //constructors
+    Point2D(void)	:	x(0.0f), y(0.0f)
+    {}
+    
+    Point2D(float newX, float newY):x(newX), y(newY)
+    {}
+    
+    float x, y;
+};
 
 #endif	//Vector3D_H

@@ -24,7 +24,7 @@ class Animator {
     
     void animate(float distance, float angle) {
         if (!this->driveBack && !this->rotated) {
-            this->beetles->moveBy(distance);
+            this->beetles->makeMove(distance);
             this->distance_moved += std::abs(distance);
             if (this->distance_moved >= this->distance) {
                 this->distance_moved = 0;
@@ -39,7 +39,7 @@ class Animator {
                 this->rotated = true;
             }
         } else if (this->driveBack && this->rotated) {
-            this->beetles->moveBy(distance);
+            this->beetles->makeMove(distance);
             this->distance_moved += std::abs(distance);
             if (this->distance_moved >= this->distance) {
                 this->distance_moved = 0;

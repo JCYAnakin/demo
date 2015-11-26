@@ -13,11 +13,59 @@
 #include "Terrain.h"
 #include "BMPHandler.h"
 #include "MyObj.h"
-#include "house.h"
 #include "beetles.h"
 #include "animator.h"
 #include "Skybox.h"
 
+int gridSize = 40;
+Terrain *terrain = NULL;
+Beetles *beetles[4];
+MyObj *house[2];
+MyObj *ball[2];
+MyObj *cow[5];
+MyObj *isis[2];
+MyObj *statue[5];
+Animator *animator[5];
+Skybox* skybox;
+int num_of_beetless = 4;
+int num_of_house = 2;
+int num_of_balls = 2;
+int num_of_cows = 5;
+int num_of_isis = 2;
+int num_of_statues = 5;
+int selected_beetles = 0;
+//textures
+char terrain_fileName[] = "/Users/jason/Xcode/MyWorld/textures/grass.bmp";
+char beetles_body_fileName[] = "/Users/jason/Xcode/MyWorld/textures/car.bmp";
+char beetles_wheel_fileName[] = "/Users/jason/Xcode/MyWorld/textures/wheel.bmp";
+char house_pic_fileName[] = "/Users/jason/Xcode/MyWorld/textures/building3.bmp";
+char ball_pic_fileName[] = "/Users/jason/Xcode/MyWorld/textures/ball.bmp";
+char cow_pic_fileName[] = "/Users/jason/Xcode/MyWorld/textures/cow.bmp";
+char isis_pic_fileName[] = "/Users/jason/Xcode/MyWorld/textures/isis.bmp";
+char statue_pic_fileName[] = "/Users/jason/Xcode/MyWorld/textures/statue.bmp";
+
+
+//pixel maps
+RGBpixmap terrain_pixelMap;
+RGBpixmap beetles_body_pixelMap;
+RGBpixmap beetles_wheel_pixelMap;
+RGBpixmap house_pixelMap;
+RGBpixmap cow_pixelMap;
+RGBpixmap ball_pixelMap;
+RGBpixmap isis_pixelMap;
+RGBpixmap statue_pixelMap;
+
+//OBJs
+std::string beetles_obj_fileName("/Users/jason/Xcode/MyWorld/obj/car.obj");
+std::string house_obj_fileName("/Users/jason/Xcode/MyWorld/obj/city.obj");
+std::string cow_obj_fileName("/Users/jason/Xcode/MyWorld/obj/cow.obj");
+std::string ball_obj_fileName("/Users/jason/Xcode/MyWorld/obj/ball.obj");
+std::string isis_obj_fileName("/Users/jason/Xcode/MyWorld/obj/isis.obj");
+std::string statue_obj_fileName("/Users/jason/Xcode/MyWorld/obj/statue.obj");
+std::string wheel1_fileName("/Users/jason/Xcode/MyWorld/obj/wheel1.obj");
+std::string wheel2_fileName("/Users/jason/Xcode/MyWorld/obj/wheel2.obj");
+std::string wheel3_fileName("/Users/jason/Xcode/MyWorld/obj/wheel3.obj");
+std::string wheel4_fileName("/Users/jason/Xcode/MyWorld/obj/wheel4.obj");
 
 void initOpenGL();
 void display(void);
@@ -29,7 +77,6 @@ void keyboardUp(unsigned char key, int x, int y);
 void functionUpKeys(int key, int x, int y);
 void functionKeys(int key, int x, int y);
 void timer(int value);
-
 void updateCameraPos();
 float* calculatebeetlesBoundingBox(Beetles* mesh);
 bool checkForBeetlesBeetlesCollision(Beetles* mesh1, Beetles* mesh2);
@@ -37,7 +84,6 @@ bool checkBeetlesCollisionWithEnemyBeetlessAndBuildings(Beetles* selectedBeetles
 void limitCameraAngle();
 void animationFunction (float delta_time);
 void loadBeetles(Beetles **beetles);
-void updateBeetlessHit();
 
 static int currentButton;
 static unsigned char currentKey;
@@ -52,11 +98,10 @@ enum Action currentAction = TRANSLATE;
 GLfloat light_position0[] = {-12.0, 24.0,12.0, 1.0}; //1:infinity
 GLfloat light_diffuse[]   = {1.0, 1.0, 1.0, 1.0};  //diffusion..
 GLfloat light_specular[]  = {1.0, 1.0, 1.0, 1.0};  //"mirror"...
-GLfloat light_ambient[]   = {1.0, 0.5, 1.0, 1.0};  //RGBA, environment..
+GLfloat light_ambient[]   = {1.0, 1.0, 1.0, 1.0};  //RGBA, environment..
 
 // City terrain mesh
-Terrain *terrain = NULL;
-int gridSize = 16;
+
 
 
 
@@ -96,55 +141,7 @@ GLint glutWindowHeight   = 500;
 //GLdouble worldBottomBase=  -8.0;
 //GLdouble worldTopBase   =  8.0;
 
-//Building Textures
-RGBpixmap bulding_pixelMap[3];
-char building_fileName1[] = "/Users/jason/Xcode/MyWorld/textures/building1.bmp";
-char building_fileName2[] = "/Users/jason/Xcode/MyWorld/textures/building2.bmp";
-char building_fileName3[] = "/Users/jason/Xcode/MyWorld/textures/building3.bmp";
-//Road Textures
-RGBpixmap road_pixelMap;
-char road_fileName[] = "/Users/jason/Xcode/MyWorld/textures/road.bmp";
-//Terrain Textures
-RGBpixmap terrain_pixelMap;
-char terrain_fileName[] = "/Users/jason/Xcode/MyWorld/textures/grass.bmp";
-//Beetles
-std::string beetles_fileName("/Users/jason/Xcode/MyWorld/forBeetles/city.obj");
-std::string house_obj_fileName("/Users/jason/Xcode/MyWorld/forBeetles/city.obj");
-std::string cannon_fileName("/Users/jason/Xcode/MyWorld/forBeetles/cannon.obj");
-std::string cabin_fileName("/Users/jason/Xcode/MyWorld/forBeetles/turret.obj");
-std::string wheel1_fileName("/Users/jason/Xcode/MyWorld/forBeetles/wheel1.obj");
-std::string wheel2_fileName("/Users/jason/Xcode/MyWorld/forBeetles/wheel2.obj");
-std::string wheel3_fileName("/Users/jason/Xcode/MyWorld/forBeetles/wheel3.obj");
-std::string wheel4_fileName("/Users/jason/Xcode/MyWorld/forBeetles/wheel4.obj");
-
-int num_of_beetless = 5;
-int num_of_house = 4;
-int selected_beetles = 0;
-int beetlessHit = 0;
 bool closeWindow = false;
-
-Beetles *beetles[5];
-House *house[5];
-Animator *animator[5];
-
-RGBpixmap beetles_body_pixelMap;
-RGBpixmap beetles_cannon_pixelMap;
-RGBpixmap beetles_cabin_pixelMap;
-RGBpixmap beetles_wheel_pixelMap;
-
-RGBpixmap house_pixelMap;
-
-char beetles_body_fileName[] = "/Users/jason/Xcode/MyWorld/forBeetles/building3.bmp";
-char beetles_cannon_fileName[] = "/Users/jason/Xcode/MyWorld/forBeetles/cannon.bmp";
-char beetles_cabin_fileName[] = "/Users/jason/Xcode/MyWorld/forBeetles/turret.bmp";
-char beetles_wheel_fileName[] = "/Users/jason/Xcode/MyWorld/forBeetles/wheel.bmp";
-
-char house_pic_fileName[] = "/Users/jason/Xcode/MyWorld/forBeetles/building3.bmp";
-
-
-Skybox* skybox;
-
-RGBpixmap round_pixelMap;
 
 int main(int argc, char **argv)
 {
@@ -189,20 +186,18 @@ void initOpenGL()
     glEnable(GL_NORMALIZE);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT , GL_NICEST);
     
-    // Set up Terrain Grid
-    Vector3D startPoint = Vector3D(-16.0f,0.0f,16.0f);
+    //Terrain
+    Vector3D startPoint = Vector3D(-40.0f,0.0f,40.0f);
     terrain = new Terrain(gridSize);
-    terrain->InitGrid(gridSize, startPoint, 32.0, 32.0);
+    terrain->InitGrid(gridSize, startPoint, 80.0, 80.0);
     
-    // Set up Skybox
-    int skyTextureNums[] = {1,2,3,4,5,6};
+    //Skybox
     skybox = new Skybox();
     skybox->setTextures();
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
-    //updateCameraPos();
     gluLookAt(lookFromx, lookFromy, lookFromz,lookAtx, lookAty, lookAtz, upx, upy, upz);
     
     Vector3D scale;
@@ -213,37 +208,135 @@ void initOpenGL()
     
     // Terrain textures
     readBMPFile(&terrain_pixelMap, terrain_fileName);
-    setTexture(&terrain_pixelMap, 2005);
+    setTexture(&terrain_pixelMap, 7);
 
     //Set Texture for Terrain
-    terrain->setTextureID(2005);
+    terrain->setTextureID(7);
     
+    //texture for beetles
     readBMPFile(&beetles_body_pixelMap, beetles_body_fileName);
-    setTexture(&beetles_body_pixelMap, 2006);
+    setTexture(&beetles_body_pixelMap, 8);
     
     readBMPFile(&beetles_wheel_pixelMap, beetles_wheel_fileName);
-    setTexture(&beetles_wheel_pixelMap, 2009);
+    setTexture(&beetles_wheel_pixelMap, 9);
+    //texture for house
+    readBMPFile(&house_pixelMap, house_pic_fileName);
+    setTexture(&house_pixelMap, 10);
+    //texture for cow
+    readBMPFile(&cow_pixelMap, cow_pic_fileName);
+    setTexture(&cow_pixelMap, 11);
+    //texture for isis
+    readBMPFile(&isis_pixelMap, isis_pic_fileName);
+    setTexture(&isis_pixelMap, 12);
+    //texture for ball
+    readBMPFile(&ball_pixelMap, ball_pic_fileName);
+    setTexture(&ball_pixelMap, 13);
+    //texture for statue
+    readBMPFile(&statue_pixelMap, statue_pic_fileName);
+    setTexture(&statue_pixelMap, 14);
+    
     
     
     for(int i = 0; i < num_of_beetless; i++){
-        loadBeetles(&beetles[i]);
+        beetles[i] = new Beetles();
+
+        load_obj(beetles_obj_fileName, &beetles[i]->body);
+        std::vector<MyObj *> * wheels = new std::vector<MyObj *>();
+        MyObj *wheel;
+        //Loads Wheels
+        load_obj(wheel1_fileName, &wheel);
+        wheels->push_back(wheel);
+        load_obj(wheel2_fileName, &wheel);
+        wheels->push_back(wheel);
+        load_obj(wheel3_fileName, &wheel);
+        wheels->push_back(wheel);
+        load_obj(wheel4_fileName, &wheel);
+        wheels->push_back(wheel);
+        (beetles[i])->set_wheels(*wheels);
+        (beetles[i])->body->setTextureMapID(8);
+        (beetles[i])->wheels[0]->setTextureMapID(9);
+        (beetles[i])->wheels[1]->setTextureMapID(9);
+        (beetles[i])->wheels[2]->setTextureMapID(9);
+        (beetles[i])->wheels[3]->setTextureMapID(9);
+        //for the animation
         animator[i] = new Animator(beetles[i],5.0,180);
     }
     for(int i = 0; i < num_of_house; i++){
-        //load_obj(house_obj_fileName[i], &(*house[i])->body)
-        //loadBeetles(&beetles[i]);
+        house[i] = new MyObj();
+        load_obj(house_obj_fileName, &house[i]);
+        house[i]->setTextureMapID(10);
     }
+    for(int i = 0; i < num_of_balls; i++)
+    {
+        ball[i] = new MyObj();
+        load_obj(ball_obj_fileName, &ball[i]);
+        ball[i]->setTextureMapID(13);
+    }
+    for(int i = 0; i < num_of_cows; i++)
+    {
+        cow[i] = new MyObj();
+        load_obj(cow_obj_fileName, &cow[i]);
+        cow[i]->setTextureMapID(11);
+    }
+    for(int i = 0; i < num_of_isis; i++)
+    {
+        isis[i] = new MyObj();
+        load_obj(isis_obj_fileName, &isis[i]);
+        isis[i]->setTextureMapID(12);
+    }
+    for(int i = 0; i < num_of_statues; i++)
+    {
+        statue[i] = new MyObj();
+        load_obj(statue_obj_fileName, &statue[i]);
+        statue[i]->setTextureMapID(14);
+    }
+
+    beetles[0]->makeMove(Vector3D(10.0,0.0,10.0));
+    beetles[1]->makeMove(Vector3D(10.0,0.0,-10.0));
+    beetles[2]->makeMove(Vector3D(-10.0,0.0,10.0));
+    beetles[3]->makeMove(Vector3D(-10.0,0.0,-10.0));
     
-    beetles[0]->moveBy(Vector3D(0.0,-0.7,0.0));
-    beetles[1]->moveBy(Vector3D(-7.0,0.0,-7.0));
-    beetles[2]->moveBy(Vector3D(5.0,0.0,-10.0));
-    beetles[3]->moveBy(Vector3D(13.0,0.0,-2.0));
-    beetles[4]->moveBy(Vector3D(-14.0,0.0,5.0));
-    beetles[0]->body->scaleFactor.x=beetles[0]->body->scaleFactor.y=beetles[0]->body->scaleFactor.z = 0.003;
-    beetles[1]->body->scaleFactor.x=beetles[1]->body->scaleFactor.y=beetles[1]->body->scaleFactor.z = 0.003;
-    beetles[2]->body->scaleFactor.x=beetles[2]->body->scaleFactor.y=beetles[2]->body->scaleFactor.z = 0.003;
-    beetles[3]->body->scaleFactor.x=beetles[3]->body->scaleFactor.y=beetles[3]->body->scaleFactor.z = 0.003;
-    beetles[4]->body->scaleFactor.x=beetles[4]->body->scaleFactor.y=beetles[4]->body->scaleFactor.z = 0.003;
+    house[0]->makeMove(Vector3D(0.0,-1.0,10.0));
+    house[1]->makeMove(Vector3D(0.0,-1.0,-10.0));
+    house[0]->makeScale(Vector3D(0.008,0.008,0.008));
+    house[1]->makeScale(Vector3D(0.008,0.008,0.008));
+    //house[0]->setMatdiffuse(0.5, 0.5, 0.5, 1.0);
+    
+    ball[0]->makeMove(Vector3D(8.0, 0.0, 8.0));
+    ball[1]->makeMove(Vector3D(-8.0, 0.0, 8.0));
+    ball[0]->makeRotate(Vector3D(90,0,0));
+    ball[0]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    ball[1]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    
+    cow[0]->makeMove(Vector3D(6.0,0.0,6.0));
+    cow[1]->makeMove(Vector3D(-6.0,0.0,-6.0));
+    cow[2]->makeMove(Vector3D(6.0,0.0,-6.0));
+    cow[3]->makeMove(Vector3D(-8.0,0.0,6.0));
+    cow[4]->makeMove(Vector3D(0.0,0.0,10.0));
+    cow[0]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    cow[1]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    cow[2]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    cow[3]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    cow[4]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    
+    isis[0]->makeMove(Vector3D(12.0, 0.0, 12.0));
+    isis[1]->makeMove(Vector3D(-8.0, 0.0, 12.0));
+    isis[0]->makeRotate(Vector3D(-90,0,0));
+    isis[1]->makeRotate(Vector3D(-90,0,0));
+    isis[0]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    isis[1]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    
+    statue[0]->makeMove(Vector3D(14.0,0.0,11.0));
+    statue[1]->makeMove(Vector3D(-11.0,0.0,-14.0));
+    statue[2]->makeMove(Vector3D(14.0,0.0,-10.0));
+    statue[3]->makeMove(Vector3D(-13.0,0.0,10.0));
+    statue[4]->makeMove(Vector3D(8.0,0.0,13.0));
+    statue[0]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    statue[1]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    statue[2]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    statue[3]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    statue[4]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
+    
 }
 
 
@@ -264,8 +357,29 @@ void display(void)
     gluLookAt(lookFromx, lookFromy, lookFromz, lookAtx, lookAty, lookAtz, upx, upy, upz);
     //skybox->DrawSkybox(10, 10, lookFromz, upx, upy, upz, false);
     //Draw beetless
-    for (int i = 0; i < num_of_beetless; i++) {
+    for (int i = 0; i < num_of_beetless; i++)
+    {
         beetles[i]->draw();
+    }
+    for(int i = 0; i < num_of_house; i++)
+    {
+        house[i]->draw();
+    }
+    for(int i = 0; i < num_of_balls; i++)
+    {
+        ball[i]->draw();
+    }
+    for(int i = 0; i < num_of_cows; i++)
+    {
+        cow[i]->draw();
+    }
+    for(int i = 0; i < num_of_isis; i++)
+    {
+        isis[i]->draw();
+    }
+    for(int i = 0; i < num_of_statues; i++)
+    {
+        statue[i]->draw();
     }
     
     // Enable depth offset with terrain with respect to roads so that roads
@@ -293,7 +407,6 @@ void reshape(int w, int h)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
-
 Vector3D pos = Vector3D(0,0,0);
 
 // Mouse Control coordinates
@@ -375,7 +488,6 @@ void timer(int value)
         exit(EXIT_SUCCESS);
     }
     glutTimerFunc(1000.0 / FPS, timer, 0);
-    updateBeetlessHit();
     //animationFunction(10.0/FPS);
     glutPostRedisplay();
 }
@@ -570,15 +682,15 @@ void animationFunction (float delta_time) {
         switch (currentFuncKey)
         {
             case GLUT_KEY_DOWN:
-                beetles[selected_beetles]->moveBy(-distance);
+                beetles[selected_beetles]->makeMove(-distance);
                 if (checkBeetlesCollisionWithEnemyBeetlessAndBuildings(beetles[selected_beetles])) {
-                    beetles[selected_beetles]->moveBy(distance);
+                    beetles[selected_beetles]->makeMove(distance);
                 }
                 break;
             case GLUT_KEY_UP:
-                beetles[selected_beetles]->moveBy(distance);
+                beetles[selected_beetles]->makeMove(distance);
                 if (checkBeetlesCollisionWithEnemyBeetlessAndBuildings(beetles[selected_beetles])) {
-                    beetles[selected_beetles]->moveBy(-distance);
+                    beetles[selected_beetles]->makeMove(-distance);
                 }
                 break;
             case GLUT_KEY_RIGHT:
@@ -596,10 +708,10 @@ void animationFunction (float delta_time) {
             case 'd':
                 break;
             case 'q':
-                beetles[selected_beetles]->rotateCannon(angle);
+                //beetles[selected_beetles]->rotateCannon(angle);
                 break;
             case 'e':
-                beetles[selected_beetles]->rotateCannon(-angle);
+                //beetles[selected_beetles]->rotateCannon(-angle);
                 break;
         }
         
@@ -611,49 +723,4 @@ void animationFunction (float delta_time) {
         lookAty = beetles[selected_beetles]->lookAt.y+1;
         lookAtz = beetles[selected_beetles]->lookAt.z;
     }
-}
-
-void loadBeetles(Beetles **beetles_new){
-    *beetles_new = new Beetles();
-    
-    load_obj(beetles_fileName, &(*beetles_new)->body);
-    load_obj(cannon_fileName, &(*beetles_new)->cannon);
-    load_obj(cabin_fileName, &(*beetles_new)->cabin);
-    
-    std::vector<MyObj *> * wheels = new std::vector<MyObj *>();
-    MyObj *wheel;
-    
-    //Loads Wheels
-    load_obj(wheel1_fileName, &wheel);
-    wheels->push_back(wheel);
-    wheel->use_center_x_translate = true;
-    
-    load_obj(wheel2_fileName, &wheel);
-    wheels->push_back(wheel);
-    wheel->use_center_x_translate = true;
-    
-    load_obj(wheel3_fileName, &wheel);
-    wheels->push_back(wheel);
-    wheel->use_center_x_translate = true;
-    
-    load_obj(wheel4_fileName, &wheel);
-    wheels->push_back(wheel);
-    wheel->use_center_x_translate = true;
-    (*beetles_new)->set_wheels(*wheels);
-    
-    (*beetles_new)->body->setTextureMapID(2006);
-    (*beetles_new)->cannon->setTextureMapID(2007);
-    (*beetles_new)->cabin->setTextureMapID(2008);
-    (*beetles_new)->wheels[0]->setTextureMapID(2009);
-    (*beetles_new)->wheels[1]->setTextureMapID(2009);
-    (*beetles_new)->wheels[2]->setTextureMapID(2009);
-    (*beetles_new)->wheels[3]->setTextureMapID(2009);
-}
-
-void updateBeetlessHit() {
-    beetlessHit = 0;
-    
-    for (int i = 0; i < num_of_beetless; i++)
-        if (beetles[i]->hit)
-            beetlessHit++;
 }
