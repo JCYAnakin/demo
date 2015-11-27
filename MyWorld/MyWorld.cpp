@@ -17,6 +17,9 @@
 #include "plane.h"
 #include "animator.h"
 #include "Skybox.h"
+//***************************
+//n m a d w s j l i k u o
+//***************************
 
 using namespace std;
 
@@ -99,9 +102,10 @@ static int currentFuncKey;
 const float FPS = 30.0;
 int count = 0;
 
-// City Interaction State Variable
-enum Action {TRANSLATE, ROTATE, SCALE, EXTRUDE, SELECT, MULTIPLESELECT, DESELECT_ALL, NAVIGATE};
-enum Action currentAction = TRANSLATE;
+enum Action {TRANSLATE, NAVIGATE, NAVIGATE2, CHOOSE};
+//                      trans,view  rotate  choose
+
+enum Action nowAction = TRANSLATE;
 
 GLfloat light_position0[] = {-12.0, 50.0,12.0, 1.0}; //1:infinity
 GLfloat light_diffuse[]   = {1.0, 1.0, 1.0, 1.0};  //diffusion..
@@ -140,8 +144,8 @@ float cameraz = radius;		// Camera Z Position
 
 static float zoom = 1.0;
 
-GLint glutWindowWidth    = 750;
-GLint glutWindowHeight   = 500;
+GLint windowWidth    = 750;
+GLint windowHeight   = 500;
 
 //// Wolrd Boundaries
 //GLdouble worldLeftBase  =  -8.0;
@@ -351,8 +355,8 @@ void initOpenGL()
     
     //plane->makeScale(Vector3D(0.008,0.008,0.008));
     plane->makeMove(Vector3D(4.0,8.0,4.0));
-    plane->lookFrom = *(new Vector3D(4.0,7.0,4.0));
-    plane->lookAt = *(new Vector3D(0.0,0.0,0.0));
+    plane->lookFrom = *(new Vector3D(4.0,8.0,4.0));
+    plane->lookAt = *(new Vector3D(0.0,3.0,0.0));
     
 }
 
@@ -364,7 +368,7 @@ void display(void)
     
     glLoadIdentity();
     
-    if (currentAction == NAVIGATE)
+    if (nowAction == NAVIGATE || nowAction == NAVIGATE2)
         ;
     else
         updateCameraPos();
@@ -412,14 +416,19 @@ void display(void)
 
 void reshape(int w, int h)
 {
-    glutWindowWidth = w; glutWindowHeight = h;
-    glViewport(0, 0, (GLsizei) glutWindowWidth, (GLsizei) glutWindowHeight);
+    windowWidth = w; windowHeight = h;
+    glViewport(0, 0, (GLsizei) windowWidth, (GLsizei) windowHeight);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(60.0*zoom,(float)glutWindowWidth/(float)glutWindowHeight,0.2,80.0);
+    gluPerspective(60.0*zoom,(float)windowWidth/(float)windowHeight,0.2,80.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
+enum state {FIRST, SECOND, THIRD, FOURTH};
+//          1->0   0->-1   -1->0   0->1
+enum state xState = FIRST;
+enum state yState = FIRST;
+enum state zState = FOURTH;
 void keyboard(unsigned char key, int x, int y)
 {
     currentKey = key;
@@ -427,9 +436,9 @@ void keyboard(unsigned char key, int x, int y)
     {
             // Navigate
         case 'n':
-            if (currentAction != NAVIGATE)
+            if (nowAction != NAVIGATE)
             {
-                currentAction = NAVIGATE;
+                nowAction = NAVIGATE;
                 
                 lookFromx = plane->lookFrom.x;
                 lookFromy = plane->lookFrom.y;
@@ -441,7 +450,7 @@ void keyboard(unsigned char key, int x, int y)
             }
             else
             {
-                currentAction = TRANSLATE;
+                nowAction = TRANSLATE;
                 lookAtx = 0;
                 lookAty = 0;
                 lookAtz = 0;
@@ -450,6 +459,12 @@ void keyboard(unsigned char key, int x, int y)
                 lookFromy = cameray;
                 lookFromz = cameraz;
             }
+            break;
+        case 'm':
+            if(nowAction == NAVIGATE)
+                nowAction = NAVIGATE2;
+            else if(nowAction == NAVIGATE2)
+                nowAction = NAVIGATE;
             break;
         case 'a':
         {
@@ -518,21 +533,180 @@ void keyboard(unsigned char key, int x, int y)
         }
         case 'j':
         {
-            if(currentAction == NAVIGATE)
-                upx+=0.1;
+            if(nowAction == NAVIGATE || nowAction == NAVIGATE2){
+                if(upx > 0 && upy > 0)
+                    yState = FIRST;
+                if(upx > 0 && upy < 0)
+                    yState = SECOND;
+                if(upx < 0 && upy < 0)
+                    yState = THIRD;
+                if(upx < 0 && upy > 0)
+                    yState = FOURTH;
+                if(yState == FIRST || yState == FOURTH)
+                    upx+=0.2;
+                if(yState == SECOND || yState == THIRD)
+                    upx-=0.2;
+                if(yState == FIRST || yState == SECOND)
+                    upy-=0.2;
+                if(yState == THIRD || yState == FOURTH)
+                    upy+=0.2;
+                if(abs(upy-0)<0.001 && yState == FIRST)
+                    yState = SECOND;
+                if(abs(upy+1)<0.001 && yState == SECOND)
+                    yState = THIRD;
+                if(abs(upy-0)<0.001 && yState == THIRD)
+                    yState = FOURTH;
+                if(abs(upy-1)<0.001 && yState == FOURTH)
+                    yState = FIRST;
+            }
             break;
         }
         case 'l':
         {
-            
+            if(nowAction == NAVIGATE || nowAction == NAVIGATE2){
+                if(upx > 0 && upy > 0)
+                    yState = FOURTH;
+                if(upx > 0 && upy < 0)
+                    yState = THIRD;
+                if(upx < 0 && upy < 0)
+                    yState = SECOND;
+                if(upx < 0 && upy > 0)
+                    yState = FIRST;
+                if(yState == FIRST || yState == FOURTH)
+                    upx-=0.2;
+                if(yState == SECOND || yState == THIRD)
+                    upx+=0.2;
+                if(yState == FIRST || yState == SECOND)
+                    upy-=0.2;
+                if(yState == THIRD || yState == FOURTH)
+                    upy+=0.2;
+                if(abs(upy-0)<0.001 && yState == FIRST)
+                    yState = SECOND;
+                if(abs(upy+1)<0.001 && yState == SECOND)
+                    yState = THIRD;
+                if(abs(upy-0)<0.001 && yState == THIRD)
+                    yState = FOURTH;
+                if(abs(upy-1)<0.001 && yState == FOURTH)
+                    yState = FIRST;
+            }
+            break;
+
+
         }
         case 'i':
         {
-            
+            if(nowAction == NAVIGATE || nowAction == NAVIGATE2){
+//                if(yState == FIRST || yState == FOURTH)
+//                    upz+=0.1;
+//                if(yState == SECOND || yState == THIRD)
+//                    upz-=0.1;
+//                if(yState == FIRST || yState == SECOND)
+//                    upy-=0.1;
+//                if(yState == THIRD || yState == FOURTH)
+//                    upy+=0.1;
+//                if(abs(upy-0)<0.001 && yState == FIRST)
+//                    yState = SECOND;
+//                if(abs(upy+1)<0.001 && yState == SECOND)
+//                    yState = THIRD;
+//                if(abs(upy-0)<0.001 && yState == THIRD)
+//                    yState = FOURTH;
+//                if(abs(upy-1)<0.001 && yState == FOURTH)
+//                    yState = FIRST;
+                lookAty+=0.1;
+                plane->lookAt.y+=0.1;
+            }
+            break;
         }
         case 'k':
         {
+            if(nowAction == NAVIGATE || nowAction == NAVIGATE2){
+//                if(yState == FIRST || yState == FOURTH)
+//                    upz-=0.1;
+//                if(yState == SECOND || yState == THIRD)
+//                    upz+=0.1;
+//                if(yState == FIRST || yState == SECOND)
+//                    upy-=0.1;
+//                if(yState == THIRD || yState == FOURTH)
+//                    upy+=0.1;
+//                if(abs(upy-0)<0.001 && yState == FIRST)
+//                    yState = SECOND;
+//                if(abs(upy+1)<0.001 && yState == SECOND)
+//                    yState = THIRD;
+//                if(abs(upy-0)<0.001 && yState == THIRD)
+//                    yState = FOURTH;
+//                if(abs(upy-1)<0.001 && yState == FOURTH)
+//                    yState = FIRST;
+                lookAty-=0.1;
+                plane->lookAt.y-=0.1;
+
+            }
+            break;
+
+        }
+        case 'u':
+        {
+            //(x-xfrom)^2+(z-zfrom)^2 = hypo^2
+            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+            float deltaX = 1;
             
+            if(xState == FIRST)
+                lookAtx+=deltaX;
+            if(xState == SECOND)
+                lookAtx-=deltaX;
+            if(abs(lookAtx-lookFromx) >= hypotenuse)
+            {
+                if(xState == FIRST)
+                {
+                    lookAtx-=deltaX;
+                    xState=SECOND;
+                }
+                else if(xState == SECOND)
+                {
+                    lookAtx+=deltaX;
+                    xState=FIRST;
+                }
+            }
+            if(xState == FIRST)
+                lookAtz = sqrt(hypotenuse*hypotenuse-(lookAtx-lookFromx)*(lookAtx-lookFromx))+lookFromz;
+            if(xState == SECOND)
+                lookAtz = -sqrt(hypotenuse*hypotenuse-(lookAtx-lookFromx)*(lookAtx-lookFromx))+lookFromz;
+//            float cosBeta = (lookAtx-lookFromx)/(hypotenuse);
+//            float beta = acos(cosBeta);
+//            float delta = 10;
+//            float alpha = beta+delta*3.1415626/180;
+//            lookAtx = lookFromx + hypotenuse * cos(alpha);
+//            lookAtz = lookFromz + hypotenuse * sin(alpha);
+            //plane->lookAt.x-=0.2;
+            break;
+        }
+        case 'o':
+        {
+            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+            float deltaX = 1;
+            
+            if(xState == FIRST)
+                lookAtx-=deltaX;
+            if(xState == SECOND)
+                lookAtx+=deltaX;
+            if(abs(lookAtx-lookFromx) >= hypotenuse)
+            {
+                if(xState == FIRST)
+                {
+                    lookAtx+=deltaX;
+                    xState=SECOND;
+                }
+                else if(xState == SECOND)
+                {
+                    lookAtx-=deltaX;
+                    xState=FIRST;
+                }
+            }
+            if(xState == FIRST)
+                lookAtz = sqrt(hypotenuse*hypotenuse-(lookAtx-lookFromx)*(lookAtx-lookFromx))+lookFromz;
+            if(xState == SECOND)
+                lookAtz = -sqrt(hypotenuse*hypotenuse-(lookAtx-lookFromx)*(lookAtx-lookFromx))+lookFromz;
+            break;
+
         }
         case '0':  //for the plane: get back to the orgin position.
         {
@@ -566,8 +740,8 @@ void keyboard(unsigned char key, int x, int y)
         closeWindow = true;
     
     // don't use custom shaders
-    if (key == 'o')
-        glUseProgram(0);
+    //if (key == 'o')
+        //glUseProgram(0);
     
     glutPostRedisplay();
 }
@@ -596,33 +770,32 @@ void mouse(int button, int state, int x, int y)
 {
     currentButton = button;
     //aa.push_back(button);
-    
-    switch(button)
-    {
-        case GLUT_LEFT_BUTTON:
+//    
+//    switch(button)
+//    {
+//        case GLUT_LEFT_BUTTON:
             if (state == GLUT_DOWN)
             {
                 prevx = x;
                 prevy = y;
             }
-            break;
-            
-        default:
-            break;
-    }
+//            break;
+//            
+//        default:
+//            break;
+    //}
     
     glutPostRedisplay();
 }
 
 
-/**************************************************************************
- * Mouse Control
- **************************************************************************/
+//********************  mouse  *************************************************
 
 void mouseMotionHandler(int xMouse, int yMouse)
 {
     //aa.push_back(pair<int, int>(xMouse, yMouse));
-    if(currentAction == TRANSLATE){
+    if(nowAction == TRANSLATE)
+    {
         if (currentButton == GLUT_LEFT_BUTTON)
         {
             Vector3D wpos;
@@ -658,20 +831,162 @@ void mouseMotionHandler(int xMouse, int yMouse)
         
         return;
     }
-    else if (currentAction == NAVIGATE)
+    else if (nowAction == NAVIGATE)
     {
-        float hypotenuse = sqrt((xMouse-prevx)*(xMouse-prevx)+(yMouse-prevy)*(yMouse-prevy));
-        float xForward = (xMouse-prevx)/hypotenuse;
-        float zForward = (yMouse-prevy)/hypotenuse;
-        lookAtx+=xForward;
-        lookFromx+=xForward;
-        lookAtz+=zForward;
-        lookFromz+=zForward;
-        plane->makeMove(Vector3D(xForward,0,zForward));
-        plane->lookFrom.x+=xForward;
-        plane->lookFrom.z+=zForward;
-        plane->lookAt.x+=xForward;
-        plane->lookAt.z+=zForward;
+        //trans
+        if(currentButton == GLUT_LEFT_BUTTON)
+        {
+            float hypotenuse = sqrt((xMouse-prevx)*(xMouse-prevx)+(yMouse-prevy)*(yMouse-prevy));
+            float xForward = (xMouse-prevx)/hypotenuse;
+            float zForward = (yMouse-prevy)/hypotenuse;
+            lookAtx+=xForward;
+            lookFromx+=xForward;
+            lookAtz+=zForward;
+            lookFromz+=zForward;
+            plane->makeMove(Vector3D(xForward,0,zForward));
+            plane->lookFrom.x+=xForward;
+            plane->lookFrom.z+=zForward;
+            plane->lookAt.x+=xForward;
+            plane->lookAt.z+=zForward;
+
+        }
+        //view
+        else if(currentButton == GLUT_RIGHT_BUTTON)
+        {
+            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+            float deltaX = 0.4;
+            if(xMouse-prevx<0){
+                if(xState == FIRST)
+                    lookAtx+=deltaX;
+                if(xState == SECOND)
+                    lookAtx-=deltaX;
+                if(abs(lookAtx-lookFromx) >= hypotenuse)
+                {
+                    if(xState == FIRST)
+                    {
+                        lookAtx-=deltaX;
+                        xState=SECOND;
+                    }
+                    else if(xState == SECOND)
+                    {
+                        lookAtx+=deltaX;
+                        xState=FIRST;
+                    }
+                }
+                if(xState == FIRST)
+                    lookAtz = sqrt(hypotenuse*hypotenuse-(lookAtx-lookFromx)*(lookAtx-lookFromx))+lookFromz;
+                if(xState == SECOND)
+                    lookAtz = -sqrt(hypotenuse*hypotenuse-(lookAtx-lookFromx)*(lookAtx-lookFromx))+lookFromz;
+
+            }
+            else
+            {
+                if(xState == FIRST)
+                    lookAtx-=deltaX;
+                if(xState == SECOND)
+                    lookAtx+=deltaX;
+                if(abs(lookAtx-lookFromx) >= hypotenuse)
+                {
+                    if(xState == FIRST)
+                    {
+                        lookAtx+=deltaX;
+                        xState=SECOND;
+                    }
+                    else if(xState == SECOND)
+                    {
+                        lookAtx-=deltaX;
+                        xState=FIRST;
+                    }
+                }
+                if(xState == FIRST)
+                    lookAtz = sqrt(hypotenuse*hypotenuse-(lookAtx-lookFromx)*(lookAtx-lookFromx))+lookFromz;
+                if(xState == SECOND)
+                    lookAtz = -sqrt(hypotenuse*hypotenuse-(lookAtx-lookFromx)*(lookAtx-lookFromx))+lookFromz;
+            }
+
+        }
+    }
+    else if(nowAction == NAVIGATE2)
+    {
+        float ratio = (float)(yMouse - prevy) / (float)(xMouse - prevx);
+        float normalRatio = (float)windowHeight / windowWidth;
+        //     |
+        //   >0|
+        //------------
+        //     |>0
+        //     |
+        //down
+        if((ratio >= normalRatio || ratio <= -normalRatio) && yMouse > (int)windowWidth / 2)
+        {
+            lookAty-=0.1;
+            plane->lookAt.y-=0.1;
+        }
+        //up
+        if((ratio >= normalRatio || ratio <= -normalRatio) && yMouse < (int)windowWidth / 2)
+        {
+            lookAty+=0.1;
+            plane->lookAt.y+=0.1;
+
+        }
+        //r
+        else if(ratio < normalRatio && ratio > -normalRatio && xMouse > (int)windowHeight / 2)
+        {
+            if(upx > 0 && upy > 0)
+                yState = FOURTH;
+            if(upx > 0 && upy < 0)
+                yState = THIRD;
+            if(upx < 0 && upy < 0)
+                yState = SECOND;
+            if(upx < 0 && upy > 0)
+                yState = FIRST;
+            if(yState == FIRST || yState == FOURTH)
+                upx-=0.2;
+            if(yState == SECOND || yState == THIRD)
+                upx+=0.2;
+            if(yState == FIRST || yState == SECOND)
+                upy-=0.2;
+            if(yState == THIRD || yState == FOURTH)
+                upy+=0.2;
+            if(abs(upy-0)<0.001 && yState == FIRST)
+                yState = SECOND;
+            if(abs(upy+1)<0.001 && yState == SECOND)
+                yState = THIRD;
+            if(abs(upy-0)<0.001 && yState == THIRD)
+                yState = FOURTH;
+            if(abs(upy-1)<0.001 && yState == FOURTH)
+                yState = FIRST;
+
+        }
+        //l
+        else if(ratio < normalRatio && ratio > -normalRatio && xMouse < (int)windowHeight / 2)
+        {
+            if(upx > 0 && upy > 0)
+                yState = FIRST;
+            if(upx > 0 && upy < 0)
+                yState = SECOND;
+            if(upx < 0 && upy < 0)
+                yState = THIRD;
+            if(upx < 0 && upy > 0)
+                yState = FOURTH;
+            if(yState == FIRST || yState == FOURTH)
+                upx+=0.2;
+            if(yState == SECOND || yState == THIRD)
+                upx-=0.2;
+            if(yState == FIRST || yState == SECOND)
+                upy-=0.2;
+            if(yState == THIRD || yState == FOURTH)
+                upy+=0.2;
+            if(abs(upy-0)<0.001 && yState == FIRST)
+                yState = SECOND;
+            if(abs(upy+1)<0.001 && yState == SECOND)
+                yState = THIRD;
+            if(abs(upy-0)<0.001 && yState == THIRD)
+                yState = FOURTH;
+            if(abs(upy-1)<0.001 && yState == FOURTH)
+                yState = FIRST;
+
+        }
+        
     }
 }
 
@@ -685,7 +1000,7 @@ void timer(int value)
         exit(EXIT_SUCCESS);
     }
     glutTimerFunc(1000.0 / FPS, timer, 0);
-    //animationFunction(10.0/FPS);
+    animationFunction(10.0/FPS);
     glutPostRedisplay();
 }
 
@@ -806,52 +1121,5 @@ void animationFunction (float delta_time) {
                 animator[i]->animate(-distance,angle);
             }
         }
-    }
-    
-    if (currentAction == NAVIGATE)
-    {
-        switch (currentFuncKey)
-        {
-            case GLUT_KEY_DOWN:
-                beetles[selected_beetles]->makeMove(-distance);
-                if (checkBeetlesCollisionWithEnemyBeetlessAndBuildings(beetles[selected_beetles])) {
-                    beetles[selected_beetles]->makeMove(distance);
-                }
-                break;
-            case GLUT_KEY_UP:
-                beetles[selected_beetles]->makeMove(distance);
-                if (checkBeetlesCollisionWithEnemyBeetlessAndBuildings(beetles[selected_beetles])) {
-                    beetles[selected_beetles]->makeMove(-distance);
-                }
-                break;
-            case GLUT_KEY_RIGHT:
-                beetles[selected_beetles]->rotateBy(-angle);
-                break;
-                
-            case GLUT_KEY_LEFT:
-                beetles[selected_beetles]->rotateBy(angle);
-                break;
-        }
-        
-        switch (currentKey) {
-            case 'a':
-                break;
-            case 'd':
-                break;
-            case 'q':
-                //beetles[selected_beetles]->rotateCannon(angle);
-                break;
-            case 'e':
-                //beetles[selected_beetles]->rotateCannon(-angle);
-                break;
-        }
-        
-        lookFromx = beetles[selected_beetles]->lookFrom.x;
-        lookFromy = beetles[selected_beetles]->lookFrom.y;
-        lookFromz = beetles[selected_beetles]->lookFrom.z;
-        
-        lookAtx = beetles[selected_beetles]->lookAt.x;
-        lookAty = beetles[selected_beetles]->lookAt.y+1;
-        lookAtz = beetles[selected_beetles]->lookAt.z;
     }
 }

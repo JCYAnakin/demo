@@ -95,7 +95,7 @@ class Beetles {
         for(int i = 0; i < num_of_wheels; i++) {
             this->wheels[i]->translation.x += new_x;
             this->wheels[i]->translation.z += new_z;
-            this->wheels[i]->rotateFactor.x += 5 * -sign;
+            //this->wheels[i]->rotateFactor.x += 5 * -sign;
         }
     };
     
