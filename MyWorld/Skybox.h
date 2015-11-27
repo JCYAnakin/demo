@@ -40,7 +40,7 @@ public:
     glPushAttrib(GL_ENABLE_BIT);
     glEnable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
-//    glDisable(GL_LIGHTING);
+    //glDisable(GL_LIGHTING);
     glDisable(GL_BLEND);
     
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, matAmbient);
@@ -55,78 +55,78 @@ public:
     glBindTexture(GL_TEXTURE_2D, textureNum[0]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
-    glVertex3f(  0.5f, -0.5f, -0.5f );
+    glVertex3f(  20.0f, -20.0f, -20.0f );
     glTexCoord2f(1, 0);
-    glVertex3f( -0.5f, -0.5f, -0.5f );
+    glVertex3f( -20.0f, -20.0f, -20.0f );
     glTexCoord2f(1, 1);
-    glVertex3f( -0.5f,  0.5f, -0.5f );
+    glVertex3f( -20.0f,  20.0f, -20.0f );
     glTexCoord2f(0, 1);
-    glVertex3f(  0.5f,  0.5f, -0.5f );
+    glVertex3f(  20.0f,  20.0f, -20.0f );
     glEnd();
     
     // Render the left quad
     glBindTexture(GL_TEXTURE_2D, textureNum[1]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
-    glVertex3f(  0.5f, -0.5f,  0.5f );
+    glVertex3f(  20.0f, -20.0f,  20.0f );
     glTexCoord2f(1, 0);
-    glVertex3f(  0.5f, -0.5f, -0.5f );
+    glVertex3f(  20.0f, -20.0f, -20.0f );
     glTexCoord2f(1, 1);
-    glVertex3f(  0.5f,  0.5f, -0.5f );
+    glVertex3f(  20.0f,  20.0f, -20.0f );
     glTexCoord2f(0, 1);
-    glVertex3f(  0.5f,  0.5f,  0.5f );
+    glVertex3f(  20.0f,  20.0f,  20.0f );
     glEnd();
     
     // Render the back quad
     glBindTexture(GL_TEXTURE_2D, textureNum[2]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
-    glVertex3f( -0.5f, -0.5f,  0.5f );
+    glVertex3f( -20.0f, -20.0f,  20.0f );
     glTexCoord2f(1, 0);
-    glVertex3f(  0.5f, -0.5f,  0.5f );
+    glVertex3f(  20.0f, -20.0f,  20.0f );
     glTexCoord2f(1, 1);
-    glVertex3f(  0.5f,  0.5f,  0.5f );
+    glVertex3f(  20.0f,  20.0f,  20.0f );
     glTexCoord2f(0, 1);
-    glVertex3f( -0.5f,  0.5f,  0.5f );
+    glVertex3f( -20.0f,  20.0f,  20.0f );
     glEnd();
     
     // Render the right quad
     glBindTexture(GL_TEXTURE_2D, textureNum[3]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
-    glVertex3f( -0.5f, -0.5f, -0.5f );
+    glVertex3f( -20.0f, -20.0f, -20.0f );
     glTexCoord2f(1, 0);
-    glVertex3f( -0.5f, -0.5f,  0.5f );
+    glVertex3f( -20.0f, -20.0f,  20.0f );
     glTexCoord2f(1, 1);
-    glVertex3f( -0.5f,  0.5f,  0.5f );
+    glVertex3f( -20.0f,  20.0f,  20.0f );
     glTexCoord2f(0, 1);
-    glVertex3f( -0.5f,  0.5f, -0.5f );
+    glVertex3f( -20.0f,  20.0f, -20.0f );
     glEnd();
     
     // Render the top quad
     glBindTexture(GL_TEXTURE_2D, textureNum[4]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 1);
-    glVertex3f( -0.5f,  0.5f, -0.5f );
+    glVertex3f( -20.0f,  20.0f, -20.0f );
     glTexCoord2f(0, 0);
-    glVertex3f( -0.5f,  0.5f,  0.5f );
+    glVertex3f( -20.0f,  20.0f,  20.0f );
     glTexCoord2f(1, 0);
-    glVertex3f(  0.5f,  0.5f,  0.5f );
+    glVertex3f(  20.0f,  20.0f,  20.0f );
     glTexCoord2f(1, 1);
-    glVertex3f(  0.5f,  0.5f, -0.5f );
+    glVertex3f(  20.0f,  20.0f, -20.0f );
     glEnd();
     
     // Render the bottom quad
     glBindTexture(GL_TEXTURE_2D, textureNum[5]);
     glBegin(GL_QUADS);
     glTexCoord2f(0, 0);
-    glVertex3f( -0.5f, -0.5f, -0.5f );
+    glVertex3f( -20.0f, -20.0f, -20.0f );
     glTexCoord2f(0, 1);
-    glVertex3f( -0.5f, -0.5f,  0.5f );
+    glVertex3f( -20.0f, -20.0f,  20.0f );
     glTexCoord2f(1, 1);
-    glVertex3f(  0.5f, -0.5f,  0.5f );
+    glVertex3f(  20.0f, -20.0f,  20.0f );
     glTexCoord2f(1, 0);
-    glVertex3f(  0.5f, -0.5f, -0.5f );
+    glVertex3f(  20.0f, -20.0f, -20.0f );
     glEnd();
     
     // Restore enable bits and matrix

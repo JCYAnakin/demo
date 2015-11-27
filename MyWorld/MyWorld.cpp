@@ -1,8 +1,8 @@
 #include <OpenGL/glu.h>
 #include <OpenGL/OpenGL.h>
 #include <GLUT/glut.h>
+#include <iostream>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <sstream>
 #include <fstream>
@@ -14,8 +14,11 @@
 #include "BMPHandler.h"
 #include "MyObj.h"
 #include "beetles.h"
+#include "plane.h"
 #include "animator.h"
 #include "Skybox.h"
+
+using namespace std;
 
 int gridSize = 40;
 Terrain *terrain = NULL;
@@ -25,6 +28,7 @@ MyObj *ball[2];
 MyObj *cow[5];
 MyObj *isis[2];
 MyObj *statue[5];
+Plane *plane;
 Animator *animator[5];
 Skybox* skybox;
 int num_of_beetless = 4;
@@ -43,6 +47,7 @@ char ball_pic_fileName[] = "/Users/jason/Xcode/MyWorld/textures/ball.bmp";
 char cow_pic_fileName[] = "/Users/jason/Xcode/MyWorld/textures/cow.bmp";
 char isis_pic_fileName[] = "/Users/jason/Xcode/MyWorld/textures/isis.bmp";
 char statue_pic_fileName[] = "/Users/jason/Xcode/MyWorld/textures/statue.bmp";
+char plane_pic_fileName[] = "/Users/jason/Xcode/MyWorld/textures/isis.bmp";
 
 
 //pixel maps
@@ -54,18 +59,21 @@ RGBpixmap cow_pixelMap;
 RGBpixmap ball_pixelMap;
 RGBpixmap isis_pixelMap;
 RGBpixmap statue_pixelMap;
+RGBpixmap plane_pixelMap;
 
 //OBJs
-std::string beetles_obj_fileName("/Users/jason/Xcode/MyWorld/obj/car.obj");
-std::string house_obj_fileName("/Users/jason/Xcode/MyWorld/obj/city.obj");
-std::string cow_obj_fileName("/Users/jason/Xcode/MyWorld/obj/cow.obj");
-std::string ball_obj_fileName("/Users/jason/Xcode/MyWorld/obj/ball.obj");
-std::string isis_obj_fileName("/Users/jason/Xcode/MyWorld/obj/isis.obj");
-std::string statue_obj_fileName("/Users/jason/Xcode/MyWorld/obj/statue.obj");
-std::string wheel1_fileName("/Users/jason/Xcode/MyWorld/obj/wheel1.obj");
-std::string wheel2_fileName("/Users/jason/Xcode/MyWorld/obj/wheel2.obj");
-std::string wheel3_fileName("/Users/jason/Xcode/MyWorld/obj/wheel3.obj");
-std::string wheel4_fileName("/Users/jason/Xcode/MyWorld/obj/wheel4.obj");
+string beetles_obj_fileName("/Users/jason/Xcode/MyWorld/obj/car.obj");
+string house_obj_fileName("/Users/jason/Xcode/MyWorld/obj/city.obj");
+string cow_obj_fileName("/Users/jason/Xcode/MyWorld/obj/cow.obj");
+string ball_obj_fileName("/Users/jason/Xcode/MyWorld/obj/ball.obj");
+string isis_obj_fileName("/Users/jason/Xcode/MyWorld/obj/isis.obj");
+string statue_obj_fileName("/Users/jason/Xcode/MyWorld/obj/statue.obj");
+string plane_obj_fileName("/Users/jason/Xcode/MyWorld/obj/statue.obj");
+string wheel1_fileName("/Users/jason/Xcode/MyWorld/obj/wheel1.obj");
+string wheel2_fileName("/Users/jason/Xcode/MyWorld/obj/wheel2.obj");
+string wheel3_fileName("/Users/jason/Xcode/MyWorld/obj/wheel3.obj");
+string wheel4_fileName("/Users/jason/Xcode/MyWorld/obj/wheel4.obj");
+
 
 void initOpenGL();
 void display(void);
@@ -95,7 +103,7 @@ int count = 0;
 enum Action {TRANSLATE, ROTATE, SCALE, EXTRUDE, SELECT, MULTIPLESELECT, DESELECT_ALL, NAVIGATE};
 enum Action currentAction = TRANSLATE;
 
-GLfloat light_position0[] = {-12.0, 24.0,12.0, 1.0}; //1:infinity
+GLfloat light_position0[] = {-12.0, 50.0,12.0, 1.0}; //1:infinity
 GLfloat light_diffuse[]   = {1.0, 1.0, 1.0, 1.0};  //diffusion..
 GLfloat light_specular[]  = {1.0, 1.0, 1.0, 1.0};  //"mirror"...
 GLfloat light_ambient[]   = {1.0, 1.0, 1.0, 1.0};  //RGBA, environment..
@@ -152,8 +160,6 @@ int main(int argc, char **argv)
     glutCreateWindow("My");
     
     initOpenGL();
-    //initShaders();
-    
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
     glutMouseFunc(mouse);
@@ -179,7 +185,7 @@ void initOpenGL()
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     
-    glClearColor(0.6, 0.6, 0.6, 0.0);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
     glClearDepth(1.0f);
     glShadeModel(GL_SMOOTH);
     glEnable(GL_DEPTH_TEST);
@@ -209,7 +215,7 @@ void initOpenGL()
     // Terrain textures
     readBMPFile(&terrain_pixelMap, terrain_fileName);
     setTexture(&terrain_pixelMap, 7);
-
+    
     //Set Texture for Terrain
     terrain->setTextureID(7);
     
@@ -234,14 +240,17 @@ void initOpenGL()
     //texture for statue
     readBMPFile(&statue_pixelMap, statue_pic_fileName);
     setTexture(&statue_pixelMap, 14);
+    //plane
+    readBMPFile(&plane_pixelMap, plane_pic_fileName);
+    setTexture(&plane_pixelMap, 15);
     
     
     
     for(int i = 0; i < num_of_beetless; i++){
         beetles[i] = new Beetles();
-
+        
         load_obj(beetles_obj_fileName, &beetles[i]->body);
-        std::vector<MyObj *> * wheels = new std::vector<MyObj *>();
+        vector<MyObj *> * wheels = new vector<MyObj *>();
         MyObj *wheel;
         //Loads Wheels
         load_obj(wheel1_fileName, &wheel);
@@ -290,7 +299,10 @@ void initOpenGL()
         load_obj(statue_obj_fileName, &statue[i]);
         statue[i]->setTextureMapID(14);
     }
-
+    plane = new Plane();
+    load_obj(plane_obj_fileName, &(plane->body));
+    plane->body->setTextureMapID(15);
+    
     beetles[0]->makeMove(Vector3D(10.0,0.0,10.0));
     beetles[1]->makeMove(Vector3D(10.0,0.0,-10.0));
     beetles[2]->makeMove(Vector3D(-10.0,0.0,10.0));
@@ -337,6 +349,11 @@ void initOpenGL()
     statue[3]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
     statue[4]->setMatAmbient(0.5, 0.5, 0.5, 1.0);
     
+    //plane->makeScale(Vector3D(0.008,0.008,0.008));
+    plane->makeMove(Vector3D(4.0,8.0,4.0));
+    plane->lookFrom = *(new Vector3D(4.0,7.0,4.0));
+    plane->lookAt = *(new Vector3D(0.0,0.0,0.0));
+    
 }
 
 
@@ -381,6 +398,7 @@ void display(void)
     {
         statue[i]->draw();
     }
+    plane->draw();
     
     // Enable depth offset with terrain with respect to roads so that roads
     // won't get drawn inside the terrain
@@ -392,31 +410,192 @@ void display(void)
     glutSwapBuffers();
 }
 
-
-// Called at initialization and whenever user resizes the window */
 void reshape(int w, int h)
 {
     glutWindowWidth = w; glutWindowHeight = h;
-    //glViewport(0, 0, viewportWidth, viewportHeight);
     glViewport(0, 0, (GLsizei) glutWindowWidth, (GLsizei) glutWindowHeight);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    
-    // keep same aspect ratio as screen window
     gluPerspective(60.0*zoom,(float)glutWindowWidth/(float)glutWindowHeight,0.2,80.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
-Vector3D pos = Vector3D(0,0,0);
+void keyboard(unsigned char key, int x, int y)
+{
+    currentKey = key;
+    switch (key)
+    {
+            // Navigate
+        case 'n':
+            if (currentAction != NAVIGATE)
+            {
+                currentAction = NAVIGATE;
+                
+                lookFromx = plane->lookFrom.x;
+                lookFromy = plane->lookFrom.y;
+                lookFromz = plane->lookFrom.z;
+                
+                lookAtx = plane->lookAt.x;
+                lookAty = plane->lookAt.y;
+                lookAtz = plane->lookAt.z;
+            }
+            else
+            {
+                currentAction = TRANSLATE;
+                lookAtx = 0;
+                lookAty = 0;
+                lookAtz = 0;
+                
+                lookFromx = camerax;
+                lookFromy = cameray;
+                lookFromz = cameraz;
+            }
+            break;
+        case 'a':
+        {
+            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+            float xForward = (lookAtz-lookFromz)/hypotenuse;
+            float zForward = -(lookAtx-lookFromx)/hypotenuse;
+            lookAtx+=xForward;
+            lookFromx+=xForward;
+            lookAtz+=zForward;
+            lookFromz+=zForward;
+            plane->makeMove(Vector3D(xForward,0,zForward));
+            plane->lookFrom.x+=xForward;
+            plane->lookFrom.z+=zForward;
+            plane->lookAt.x+=xForward;
+            plane->lookAt.z+=zForward;
+            break;
+        }
+        case 'd':
+        {
+            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+            float xForward = -(lookAtz-lookFromz)/hypotenuse;
+            float zForward = (lookAtx-lookFromx)/hypotenuse;
+            lookAtx+=xForward;
+            lookFromx+=xForward;
+            lookAtz+=zForward;
+            lookFromz+=zForward;
+            plane->makeMove(Vector3D(xForward,0,zForward));
+            plane->lookFrom.x+=xForward;
+            plane->lookFrom.z+=zForward;
+            plane->lookAt.x+=xForward;
+            plane->lookAt.z+=zForward;
+            break;
 
+        }
+        case 'w':
+        {
+            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+            float xForward = (lookAtx-lookFromx)/hypotenuse;
+            float zForward = (lookAtz-lookFromz)/hypotenuse;
+            lookAtx+=xForward;
+            lookFromx+=xForward;
+            lookAtz+=zForward;
+            lookFromz+=zForward;
+            plane->makeMove(Vector3D(xForward,0,zForward));
+            plane->lookFrom.x+=xForward;
+            plane->lookFrom.z+=zForward;
+            plane->lookAt.x+=xForward;
+            plane->lookAt.z+=zForward;
+            break;
+        }
+        case 's':
+        {
+            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+            float xForward = (lookAtx-lookFromx)/hypotenuse;
+            float zForward = (lookAtz-lookFromz)/hypotenuse;
+            lookAtx-=xForward;
+            lookFromx-=xForward;
+            lookAtz-=zForward;
+            lookFromz-=zForward;
+            plane->makeMove(Vector3D(xForward,0,zForward));
+            plane->lookFrom.x-=xForward;
+            plane->lookFrom.z-=zForward;
+            plane->lookAt.x-=xForward;
+            plane->lookAt.z-=zForward;
+            break;
+        }
+        case 'j':
+        {
+            if(currentAction == NAVIGATE)
+                upx+=0.1;
+            break;
+        }
+        case 'l':
+        {
+            
+        }
+        case 'i':
+        {
+            
+        }
+        case 'k':
+        {
+            
+        }
+        case '0':  //for the plane: get back to the orgin position.
+        {
+            /*plane->makeMove(Vector3D(4.0,8.0,4.0));
+            plane->lookFrom = *(new Vector3D(4.0,8.0,4.0));
+            plane->lookAt = *(new Vector3D(0.0,0.0,0.0));*/
+            lookAtx = lookAty = lookAtz = 0;
+            lookFromx = 4.0;
+            lookFromy = 7.0;
+            lookFromz = 4.0;
+            plane->moveTo(Vector3D(4.0,8.0,4.0));
+//            plane->translation.x = plane->body->translation.x = 4;
+//            plane->translation.y = plane->body->translation.y = 8;
+//            plane->translation.z = plane->body->translation.z = 4;
+            plane->rotateFactor.x = plane->body->rotateFactor.x = 0;
+            plane->rotateFactor.y = plane->body->rotateFactor.y = 0;
+            plane->rotateFactor.z = plane->body->rotateFactor.z = 0;
+            plane->lookFrom.x = 4.0;
+            plane->lookFrom.y = 8.0;
+            plane->lookFrom.z = 4.0;
+            plane->lookAt.x = 0;
+            plane->lookAt.y = 0;
+            plane->lookAt.z = 0;
+            
+            //updateCameraPos();
+        }
+    }
+    
+    // if 'esc' key pressed
+    if (key == 27)
+        closeWindow = true;
+    
+    // don't use custom shaders
+    if (key == 'o')
+        glUseProgram(0);
+    
+    glutPostRedisplay();
+}
+
+void keyboardUp(unsigned char key, int x, int y) {
+    currentKey = '\0';
+}
+
+void functionUpKeys (int key, int x, int y) {
+    currentFuncKey = -1;
+}
+
+void functionKeys(int key, int x, int y) {
+    currentFuncKey = key;
+}
+
+
+
+Vector3D pos = Vector3D(0,0,0);
 // Mouse Control coordinates
 int prevx, prevy;
-
+vector<pair<int, int>> aa;
 int selectedControlPoint = -1;
 
 void mouse(int button, int state, int x, int y)
 {
     currentButton = button;
+    //aa.push_back(button);
     
     switch(button)
     {
@@ -442,40 +621,58 @@ void mouse(int button, int state, int x, int y)
 
 void mouseMotionHandler(int xMouse, int yMouse)
 {
-    if (currentButton == GLUT_LEFT_BUTTON)
-    {
-        Vector3D wpos;
-        
-        theta += prevx - xMouse;
-        phy += prevy - yMouse;
-        
-        while (theta < -180)
-            theta += 360;
-        while (theta > 180)
-            theta -= 360;
-        while (phy < 0)
-            phy += 360;
-        
-        //limitCameraAngle();
-        
-    }
-    else if (currentButton == GLUT_RIGHT_BUTTON)
-    {
-        if (yMouse < prevy) {
-            //if (radius < 35) {
+    //aa.push_back(pair<int, int>(xMouse, yMouse));
+    if(currentAction == TRANSLATE){
+        if (currentButton == GLUT_LEFT_BUTTON)
+        {
+            Vector3D wpos;
+            
+            theta += prevx - xMouse;
+            phy += prevy - yMouse;
+            
+            while (theta < -180)
+                theta += 360;
+            while (theta > 180)
+                theta -= 360;
+            while (phy < 0)
+                phy += 360;
+            
+            //limitCameraAngle();
+            
+        }
+        else if (currentButton == GLUT_RIGHT_BUTTON)
+        {
+            if (yMouse > prevy) {
+                //if (radius < 35) {
                 radius++;
-            //}
-        } else {
-            if (radius > 6) {
-                radius--;
+                //}
+            } else {
+                if (radius > 6) {
+                    radius--;
+                }
             }
         }
+        
+        prevx = xMouse;
+        prevy = yMouse;
+        
+        return;
     }
-    
-    prevx = xMouse;
-    prevy = yMouse;
-    
-    return;
+    else if (currentAction == NAVIGATE)
+    {
+        float hypotenuse = sqrt((xMouse-prevx)*(xMouse-prevx)+(yMouse-prevy)*(yMouse-prevy));
+        float xForward = (xMouse-prevx)/hypotenuse;
+        float zForward = (yMouse-prevy)/hypotenuse;
+        lookAtx+=xForward;
+        lookFromx+=xForward;
+        lookAtz+=zForward;
+        lookFromz+=zForward;
+        plane->makeMove(Vector3D(xForward,0,zForward));
+        plane->lookFrom.x+=xForward;
+        plane->lookFrom.z+=zForward;
+        plane->lookAt.x+=xForward;
+        plane->lookAt.z+=zForward;
+    }
 }
 
 /**************************************************************************
@@ -484,7 +681,7 @@ void mouseMotionHandler(int xMouse, int yMouse)
 void timer(int value)
 {
     if (closeWindow) {
-        //std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        //this_thread::sleep_for(chrono::milliseconds(2000));
         exit(EXIT_SUCCESS);
     }
     glutTimerFunc(1000.0 / FPS, timer, 0);
@@ -595,73 +792,7 @@ void limitCameraAngle()
         phy = 30;
 }
 /* Handles input from the keyboard, non-arrow keys */
-void keyboard(unsigned char key, int x, int y)
-{
-    currentKey = key;
-    switch (key)
-    {
-            // Navigate
-        case 'n':
-            if (currentAction != NAVIGATE)
-            {
-                currentAction = NAVIGATE;
-                
-                lookFromx = beetles[selected_beetles]->lookFrom.x;
-                lookFromy = beetles[selected_beetles]->lookFrom.y;
-                lookFromz = beetles[selected_beetles]->lookFrom.z;
-                
-                lookAtx = beetles[selected_beetles]->lookAt.x;
-                lookAty = beetles[selected_beetles]->lookAt.y;
-                lookAtz = beetles[selected_beetles]->lookAt.z;
-            }
-            else
-            {
-                currentAction = TRANSLATE;
-                lookAtx = lookFromx;
-                lookAty = lookFromy;
-                lookAtz = lookFromz;
-                
-                lookFromx = camerax;
-                lookFromy = cameray;
-                lookFromz = cameraz;
-            }
-            break;
-//        case 'a':
-//            lookAtx-=1;
-//            break;
-//        case 'd':
-//            lookAtx-=1;
-//            break;
-//        case 'w':
-//            lookAty+=1;
-//            break;
-//        case 's':
-//            lookAty-=1;
-//            break;
-    }
-    
-    // if 'esc' key pressed
-    if (key == 27)
-        closeWindow = true;
-    
-    // don't use custom shaders
-    if (key == 'o')
-        glUseProgram(0);
-    
-    glutPostRedisplay();
-}
 
-void keyboardUp(unsigned char key, int x, int y) {
-    currentKey = '\0';
-}
-
-void functionUpKeys (int key, int x, int y) {
-    currentFuncKey = -1;
-}
-
-void functionKeys(int key, int x, int y) {
-    currentFuncKey = key;
-}
 
 
 void animationFunction (float delta_time) {
