@@ -2,6 +2,7 @@
 #define BMP_hpp
 
 #include <iostream>
+#include <math.h>
 using namespace::std;
 typedef struct                          //4*2+2*2+2=14
 {
@@ -73,6 +74,7 @@ public:
     void writeData(FILE* fpw);
     void toGray(FILE* fpw);
     void toRGB(FILE* fpw);
+    
     void binarization(FILE* fp);
     void binarizationALL(FILE* fp);
     void dilation(FILE* fp, unsigned char* dataIn);
@@ -80,6 +82,13 @@ public:
     void opening(FILE* fpwTmp, FILE* fpw);
     void closing(FILE* fpwTmp, FILE* fpw);
     void hmt(FILE* fpw);
+    
+    void HistogramEqualization(FILE* fpwH);
+    void RGBEachHistogramEqualization(FILE* fpwH);
+    void RGBHistogramEqualization(FILE* fpwH);
+    void logarithmic(FILE* fpw);
+    void logarithmicRGB(FILE* fpw);
+    void logarithmicRGBEach(FILE* fpw);
 };
 
 #endif /* BMP_hpp */
