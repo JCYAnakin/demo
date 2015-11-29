@@ -17,8 +17,12 @@
 #include "plane.h"
 #include "animator.h"
 #include "Skybox.h"
+//*******issue***************
+//scale obj, light pos, light&obj mat
+//***************************
 //***************************
 //n m a d w s j l i k u o
+//ws ed rf
 //***************************
 
 using namespace std;
@@ -31,6 +35,9 @@ MyObj *ball[2];
 MyObj *cow[5];
 MyObj *isis[2];
 MyObj *statue[5];
+MyObj *ObjChoose = nullptr;
+Beetles *beetlesChoose = nullptr;
+bool isBeetlesChoose = false;
 Plane *plane;
 Animator *animator[5];
 Skybox* skybox;
@@ -41,6 +48,10 @@ int num_of_cows = 5;
 int num_of_isis = 2;
 int num_of_statues = 5;
 int selected_beetles = 0;
+
+#define BUFSIZE 512
+GLuint selectBuf[BUFSIZE];
+
 //textures
 char terrain_fileName[] = "/Users/jason/Xcode/MyWorld/textures/grass.bmp";
 char beetles_body_fileName[] = "/Users/jason/Xcode/MyWorld/textures/car.bmp";
@@ -79,12 +90,17 @@ string wheel4_fileName("/Users/jason/Xcode/MyWorld/obj/wheel4.obj");
 
 
 void initOpenGL();
+void drawThings(void);
 void display(void);
 void reshape(int w, int h);
+void startPicking(int cursorX, int cursorY);
+void stopPicking();
+void processHits(GLint hits, GLuint buffer[]);
 void mouse(int button, int state, int x, int y);
 void mouseMotionHandler(int xMouse, int yMouse);
 void keyboard(unsigned char key, int x, int y);
 void keyboardUp(unsigned char key, int x, int y);
+void chooseAnObj(int direction);
 void functionUpKeys(int key, int x, int y);
 void functionKeys(int key, int x, int y);
 void timer(int value);
@@ -102,12 +118,11 @@ static int currentFuncKey;
 const float FPS = 30.0;
 int count = 0;
 
-enum Action {TRANSLATE, NAVIGATE, NAVIGATE2, CHOOSE};
+enum Action {TRANSLATE, NAVIGATE, NAVIGATE2, CHOOSE, LIGHT, LIGHTD, LIGHTS, LIGHTA};
 //                      trans,view  rotate  choose
 
 enum Action nowAction = TRANSLATE;
-
-GLfloat light_position0[] = {-12.0, 50.0,12.0, 1.0}; //1:infinity
+GLfloat light_position0[] = {-12, 50, 12, 0.0}; //1:infinity
 GLfloat light_diffuse[]   = {1.0, 1.0, 1.0, 1.0};  //diffusion..
 GLfloat light_specular[]  = {1.0, 1.0, 1.0, 1.0};  //"mirror"...
 GLfloat light_ambient[]   = {1.0, 1.0, 1.0, 1.0};  //RGBA, environment..
@@ -181,11 +196,6 @@ int width, height;
 // Setup openGL */
 void initOpenGL()
 {
-    // for my lights..
-    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position0);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     
@@ -303,6 +313,7 @@ void initOpenGL()
         load_obj(statue_obj_fileName, &statue[i]);
         statue[i]->setTextureMapID(14);
     }
+    ObjChoose = ball[0];
     plane = new Plane();
     load_obj(plane_obj_fileName, &(plane->body));
     plane->body->setTextureMapID(15);
@@ -359,12 +370,65 @@ void initOpenGL()
     plane->lookAt = *(new Vector3D(0.0,3.0,0.0));
     
 }
-
+/*
+ int num_of_beetless = 4;
+ int num_of_balls = 2;
+ int num_of_cows = 5;
+ int num_of_isis = 2;
+ int num_of_statues = 5;
+ */
+//name: 0:beetles, 10: balls 20:cows 30:isis 40:statue plane:50
+void drawThings(void)
+{
+    //Draw beetless
+    for (int i = 0; i < num_of_beetless; i++)
+    {
+        glPushName(i);
+        beetles[i]->draw();
+        glPopName();
+    }
+    for(int i = 0; i < num_of_house; i++)
+    {
+        //glPushName(num_of_beetless+i);
+        house[i]->draw();
+        //glPopName();
+    }
+    for(int i = 0; i < num_of_balls; i++)
+    {
+        glPushName(i+10);
+        ball[i]->draw();
+        glPopName();
+    }
+    for(int i = 0; i < num_of_cows; i++)
+    {
+        glPushName(i+20);
+        cow[i]->draw();
+        glPopName();
+    }
+    for(int i = 0; i < num_of_isis; i++)
+    {
+        glPushName(30+i);
+        isis[i]->draw();
+        glPopName();
+    }
+    for(int i = 0; i < num_of_statues; i++)
+    {
+        glPushName(40+i);
+        statue[i]->draw();
+        glPopName();
+    }
+    plane->draw();
+}
 
 void display(void)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // for my lights..
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
     glLightfv(GL_LIGHT0, GL_POSITION, light_position0);
+    //glLightfv(GL_LIGHT0, GL_POSITION, light_position0);
     
     glLoadIdentity();
     
@@ -377,32 +441,8 @@ void display(void)
     skybox->DrawSkybox(lookFromx, lookFromy, lookFromz, upx, upy, upz, true);
     gluLookAt(lookFromx, lookFromy, lookFromz, lookAtx, lookAty, lookAtz, upx, upy, upz);
     //skybox->DrawSkybox(10, 10, lookFromz, upx, upy, upz, false);
-    //Draw beetless
-    for (int i = 0; i < num_of_beetless; i++)
-    {
-        beetles[i]->draw();
-    }
-    for(int i = 0; i < num_of_house; i++)
-    {
-        house[i]->draw();
-    }
-    for(int i = 0; i < num_of_balls; i++)
-    {
-        ball[i]->draw();
-    }
-    for(int i = 0; i < num_of_cows; i++)
-    {
-        cow[i]->draw();
-    }
-    for(int i = 0; i < num_of_isis; i++)
-    {
-        isis[i]->draw();
-    }
-    for(int i = 0; i < num_of_statues; i++)
-    {
-        statue[i]->draw();
-    }
-    plane->draw();
+    
+    drawThings();
     
     // Enable depth offset with terrain with respect to roads so that roads
     // won't get drawn inside the terrain
@@ -468,67 +508,205 @@ void keyboard(unsigned char key, int x, int y)
             break;
         case 'a':
         {
-            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
-            float xForward = (lookAtz-lookFromz)/hypotenuse;
-            float zForward = -(lookAtx-lookFromx)/hypotenuse;
-            lookAtx+=xForward;
-            lookFromx+=xForward;
-            lookAtz+=zForward;
-            lookFromz+=zForward;
-            plane->makeMove(Vector3D(xForward,0,zForward));
-            plane->lookFrom.x+=xForward;
-            plane->lookFrom.z+=zForward;
-            plane->lookAt.x+=xForward;
-            plane->lookAt.z+=zForward;
+            if(nowAction == NAVIGATE)
+            {
+                float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+                float xForward = (lookAtz-lookFromz)/hypotenuse;
+                float zForward = -(lookAtx-lookFromx)/hypotenuse;
+                lookAtx+=xForward;
+                lookFromx+=xForward;
+                lookAtz+=zForward;
+                lookFromz+=zForward;
+                plane->makeMove(Vector3D(xForward,0,zForward));
+                plane->lookFrom.x+=xForward;
+                plane->lookFrom.z+=zForward;
+                plane->lookAt.x+=xForward;
+                plane->lookAt.z+=zForward;
+            }
+            else if (nowAction == CHOOSE)
+            {
+                chooseAnObj(2);
+            }
             break;
         }
         case 'd':
         {
-            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
-            float xForward = -(lookAtz-lookFromz)/hypotenuse;
-            float zForward = (lookAtx-lookFromx)/hypotenuse;
-            lookAtx+=xForward;
-            lookFromx+=xForward;
-            lookAtz+=zForward;
-            lookFromz+=zForward;
-            plane->makeMove(Vector3D(xForward,0,zForward));
-            plane->lookFrom.x+=xForward;
-            plane->lookFrom.z+=zForward;
-            plane->lookAt.x+=xForward;
-            plane->lookAt.z+=zForward;
+            if(nowAction == NAVIGATE){
+                float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+                float xForward = -(lookAtz-lookFromz)/hypotenuse;
+                float zForward = (lookAtx-lookFromx)/hypotenuse;
+                lookAtx+=xForward;
+                lookFromx+=xForward;
+                lookAtz+=zForward;
+                lookFromz+=zForward;
+                plane->makeMove(Vector3D(xForward,0,zForward));
+                plane->lookFrom.x+=xForward;
+                plane->lookFrom.z+=zForward;
+                plane->lookAt.x+=xForward;
+                plane->lookAt.z+=zForward;
+            
+            }
+            else if(nowAction == CHOOSE)
+            {
+                chooseAnObj(3);
+            }
+            else if (nowAction == LIGHT)
+            {
+                light_position0[1] -=10;
+            }
+            else if (nowAction == LIGHTD)
+            {
+                light_diffuse[1] -=0.1;
+            }
+            else if (nowAction == LIGHTS)
+            {
+                light_specular[1] -=0.1;
+            }
+            else if (nowAction == LIGHTA)
+            {
+                light_ambient[1] -=0.1;
+            }
             break;
-
         }
         case 'w':
         {
-            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
-            float xForward = (lookAtx-lookFromx)/hypotenuse;
-            float zForward = (lookAtz-lookFromz)/hypotenuse;
-            lookAtx+=xForward;
-            lookFromx+=xForward;
-            lookAtz+=zForward;
-            lookFromz+=zForward;
-            plane->makeMove(Vector3D(xForward,0,zForward));
-            plane->lookFrom.x+=xForward;
-            plane->lookFrom.z+=zForward;
-            plane->lookAt.x+=xForward;
-            plane->lookAt.z+=zForward;
+            if(nowAction == NAVIGATE)
+            {
+                float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+                float xForward = (lookAtx-lookFromx)/hypotenuse;
+                float zForward = (lookAtz-lookFromz)/hypotenuse;
+                lookAtx+=xForward;
+                lookFromx+=xForward;
+                lookAtz+=zForward;
+                lookFromz+=zForward;
+                plane->makeMove(Vector3D(xForward,0,zForward));
+                plane->lookFrom.x+=xForward;
+                plane->lookFrom.z+=zForward;
+                plane->lookAt.x+=xForward;
+                plane->lookAt.z+=zForward;
+            }
+            else if (nowAction == CHOOSE)
+            {
+                chooseAnObj(0);
+                
+            }
+            else if (nowAction == LIGHT)
+            {
+                light_position0[0] +=10;
+            }
+            else if (nowAction == LIGHTD)
+            {
+                light_diffuse[0] +=0.1;
+            }
+            else if (nowAction == LIGHTS)
+            {
+                light_specular[0] +=0.1;
+            }
+            else if (nowAction == LIGHTA)
+            {
+                light_ambient[0] +=0.1;
+            }
             break;
         }
         case 's':
         {
-            float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
-            float xForward = (lookAtx-lookFromx)/hypotenuse;
-            float zForward = (lookAtz-lookFromz)/hypotenuse;
-            lookAtx-=xForward;
-            lookFromx-=xForward;
-            lookAtz-=zForward;
-            lookFromz-=zForward;
-            plane->makeMove(Vector3D(xForward,0,zForward));
-            plane->lookFrom.x-=xForward;
-            plane->lookFrom.z-=zForward;
-            plane->lookAt.x-=xForward;
-            plane->lookAt.z-=zForward;
+            if(nowAction == NAVIGATE){
+                float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
+                float xForward = (lookAtx-lookFromx)/hypotenuse;
+                float zForward = (lookAtz-lookFromz)/hypotenuse;
+                lookAtx-=xForward;
+                lookFromx-=xForward;
+                lookAtz-=zForward;
+                lookFromz-=zForward;
+                plane->makeMove(Vector3D(xForward,0,zForward));
+                plane->lookFrom.x-=xForward;
+                plane->lookFrom.z-=zForward;
+                plane->lookAt.x-=xForward;
+                plane->lookAt.z-=zForward;
+            }
+            else if (nowAction == CHOOSE)
+            {
+                chooseAnObj(1);
+            }
+            else if (nowAction == LIGHT)
+            {
+                light_position0[0] -=10;
+            }
+            else if (nowAction == LIGHTD)
+            {
+                light_diffuse[0] -=0.1;
+            }
+            else if (nowAction == LIGHTS)
+            {
+                light_specular[0] -=0.1;
+            }
+            else if (nowAction == LIGHTA)
+            {
+                light_ambient[0] -=0.1;
+            }
+            break;
+        }
+        case 'e':
+        {
+            if (nowAction == LIGHT)
+            {
+                light_position0[1] +=10;
+            }
+            else if (nowAction == LIGHTD)
+            {
+                light_diffuse[1] +=0.1;
+            }
+            else if (nowAction == LIGHTS)
+            {
+                light_specular[1] +=0.1;
+            }
+            else if (nowAction == LIGHTA)
+            {
+                light_ambient[1] +=0.1;
+            }
+            break;
+        }
+//        case 'd':
+//        {
+//            
+//        }
+        case 'r':
+        {
+            if (nowAction == LIGHT)
+            {
+                light_position0[2] +=10;
+            }
+            else if (nowAction == LIGHTD)
+            {
+                light_diffuse[2] +=0.1;
+            }
+            else if (nowAction == LIGHTS)
+            {
+                light_specular[2] +=0.1;
+            }
+            else if (nowAction == LIGHTA)
+            {
+                light_ambient[2] +=0.1;
+            }
+        }
+        case 'f':
+        {
+            if (nowAction == LIGHT)
+            {
+                light_position0[2] -=10;
+            }
+            else if (nowAction == LIGHTD)
+            {
+                light_diffuse[2] -=0.1;
+            }
+            else if (nowAction == LIGHTS)
+            {
+                light_specular[2] -=0.1;
+            }
+            else if (nowAction == LIGHTA)
+            {
+                light_ambient[2] -=0.1;
+            }
             break;
         }
         case 'j':
@@ -558,6 +736,14 @@ void keyboard(unsigned char key, int x, int y)
                     yState = FOURTH;
                 if(abs(upy-1)<0.001 && yState == FOURTH)
                     yState = FIRST;
+            }
+            else if (nowAction == CHOOSE)
+            {
+                if(!isBeetlesChoose)
+                    ObjChoose->translation.x -= 1.0;
+                else
+                    beetlesChoose->makeMove(Vector3D(-1.0,0,0));
+
             }
             break;
         }
@@ -589,6 +775,14 @@ void keyboard(unsigned char key, int x, int y)
                 if(abs(upy-1)<0.001 && yState == FOURTH)
                     yState = FIRST;
             }
+            else if (nowAction == CHOOSE)
+            {
+                if(!isBeetlesChoose)
+                    ObjChoose->translation.x += 1.0;
+                else
+                    beetlesChoose->makeMove(Vector3D(1.0,0,0));
+
+            }
             break;
 
 
@@ -615,6 +809,13 @@ void keyboard(unsigned char key, int x, int y)
                 lookAty+=0.1;
                 plane->lookAt.y+=0.1;
             }
+            else if (nowAction == CHOOSE)
+            {
+                if(!isBeetlesChoose)
+                    ObjChoose->translation.z -= 1.0;
+                else
+                    beetlesChoose->makeMove(Vector3D(0,0,-1.0));
+            }
             break;
         }
         case 'k':
@@ -640,11 +841,20 @@ void keyboard(unsigned char key, int x, int y)
                 plane->lookAt.y-=0.1;
 
             }
+            else if (nowAction == CHOOSE)
+            {
+                if(!isBeetlesChoose)
+                    ObjChoose->translation.z += 1.0;
+                else
+                    beetlesChoose->makeMove(Vector3D(0,0,1.0));
+            }
             break;
 
         }
         case 'u':
         {
+            if(nowAction == NAVIGATE)
+            {
             //(x-xfrom)^2+(z-zfrom)^2 = hypo^2
             float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
             float deltaX = 1;
@@ -677,10 +887,12 @@ void keyboard(unsigned char key, int x, int y)
 //            lookAtx = lookFromx + hypotenuse * cos(alpha);
 //            lookAtz = lookFromz + hypotenuse * sin(alpha);
             //plane->lookAt.x-=0.2;
+            }
             break;
         }
         case 'o':
         {
+            if(nowAction == NAVIGATE){
             float hypotenuse = sqrt((lookFromx-lookAtx)*(lookFromx-lookAtx)+(lookAtz-lookFromz)*(lookAtz-lookFromz));
             float deltaX = 1;
             
@@ -705,6 +917,7 @@ void keyboard(unsigned char key, int x, int y)
                 lookAtz = sqrt(hypotenuse*hypotenuse-(lookAtx-lookFromx)*(lookAtx-lookFromx))+lookFromz;
             if(xState == SECOND)
                 lookAtz = -sqrt(hypotenuse*hypotenuse-(lookAtx-lookFromx)*(lookAtx-lookFromx))+lookFromz;
+            }
             break;
 
         }
@@ -730,8 +943,49 @@ void keyboard(unsigned char key, int x, int y)
             plane->lookAt.x = 0;
             plane->lookAt.y = 0;
             plane->lookAt.z = 0;
+            break;
             
             //updateCameraPos();
+        }
+        case 'c':
+        {
+            if(nowAction!=CHOOSE)
+                nowAction = CHOOSE;
+            else
+                nowAction = TRANSLATE;
+            break;
+        }
+        case '9':
+        {
+            if(nowAction!=LIGHT)
+                nowAction = LIGHT;
+            else
+                nowAction = TRANSLATE;
+            break;
+        }
+        case '8':
+        {
+            if(nowAction!=LIGHTS)
+                nowAction = LIGHTS;
+            else
+                nowAction = TRANSLATE;
+            break;
+        }
+        case '7':
+        {
+            if(nowAction!=LIGHTA)
+                nowAction = LIGHTA;
+            else
+                nowAction = TRANSLATE;
+            break;
+        }
+        case '6':
+        {
+            if(nowAction!=LIGHTD)
+                nowAction = LIGHTD;
+            else
+                nowAction = TRANSLATE;
+            break;
         }
     }
     
@@ -756,6 +1010,150 @@ void functionUpKeys (int key, int x, int y) {
 
 void functionKeys(int key, int x, int y) {
     currentFuncKey = key;
+}
+void chooseAnObj(int direction) //0:w z--,near    1:s z++    2:a x--    3:d x++
+{
+    if(direction == 0)
+    {
+        MyObj *maxOfMin = nullptr;
+        for(MyObj* tmp : ball)
+        {
+            if(tmp->translation.z < ObjChoose->translation.z)
+            {
+                if(!maxOfMin || tmp->translation.z > maxOfMin->translation.z)
+                    maxOfMin = tmp;
+            }
+        }
+        for(MyObj* tmp : cow)
+        {
+            if(tmp->translation.z < ObjChoose->translation.z)
+                if(!maxOfMin || tmp->translation.z > maxOfMin->translation.z)
+                    maxOfMin = tmp;
+
+        }
+        for(MyObj* tmp : isis)
+        {
+            if(tmp->translation.z < ObjChoose->translation.z)
+                if(!maxOfMin || tmp->translation.z > maxOfMin->translation.z)
+                    maxOfMin = tmp;
+
+        }
+        for(MyObj* tmp : statue)
+        {
+            if(tmp->translation.z < ObjChoose->translation.z)
+                if(!maxOfMin || tmp->translation.z > maxOfMin->translation.z)
+                    maxOfMin = tmp;
+        }
+        if(maxOfMin)
+            ObjChoose = maxOfMin;
+        return;
+    }
+    else if(direction == 1)
+    {
+        MyObj *maxOfMin = nullptr;
+        for(MyObj* tmp : ball)
+        {
+            if(tmp->translation.z > ObjChoose->translation.z)
+            {
+                if(!maxOfMin || tmp->translation.z < maxOfMin->translation.z)
+                    maxOfMin = tmp;
+            }
+        }
+        for(MyObj* tmp : cow)
+        {
+            if(tmp->translation.z > ObjChoose->translation.z)
+                if(!maxOfMin || tmp->translation.z < maxOfMin->translation.z)
+                    maxOfMin = tmp;
+            
+        }
+        for(MyObj* tmp : isis)
+        {
+            if(tmp->translation.z > ObjChoose->translation.z)
+                if(!maxOfMin || tmp->translation.z < maxOfMin->translation.z)
+                    maxOfMin = tmp;
+            
+        }
+        for(MyObj* tmp : statue)
+        {
+            if(tmp->translation.z > ObjChoose->translation.z)
+                if(!maxOfMin || tmp->translation.z < maxOfMin->translation.z)
+                    maxOfMin = tmp;
+        }
+        if(maxOfMin)
+            ObjChoose = maxOfMin;
+        return;
+    }
+    if(direction == 2)
+    {
+        MyObj *maxOfMin = nullptr;
+        for(MyObj* tmp : ball)
+        {
+            if(tmp->translation.x < ObjChoose->translation.x)
+            {
+                if(!maxOfMin || tmp->translation.x > maxOfMin->translation.x)
+                    maxOfMin = tmp;
+            }
+        }
+        for(MyObj* tmp : cow)
+        {
+            if(tmp->translation.x < ObjChoose->translation.x)
+                if(!maxOfMin || tmp->translation.x > maxOfMin->translation.x)
+                    maxOfMin = tmp;
+            
+        }
+        for(MyObj* tmp : isis)
+        {
+            if(tmp->translation.x < ObjChoose->translation.x)
+                if(!maxOfMin || tmp->translation.x > maxOfMin->translation.x)
+                    maxOfMin = tmp;
+            
+        }
+        for(MyObj* tmp : statue)
+        {
+            if(tmp->translation.x < ObjChoose->translation.x)
+                if(!maxOfMin || tmp->translation.x > maxOfMin->translation.x)
+                    maxOfMin = tmp;
+        }
+        if(maxOfMin)
+            ObjChoose = maxOfMin;
+        return;
+    }
+    if(direction == 3)
+    {
+        MyObj *maxOfMin = nullptr;
+        for(MyObj* tmp : ball)
+        {
+            if(tmp->translation.x > ObjChoose->translation.x)
+            {
+                if(!maxOfMin || tmp->translation.x < maxOfMin->translation.x)
+                    maxOfMin = tmp;
+            }
+        }
+        for(MyObj* tmp : cow)
+        {
+            if(tmp->translation.x > ObjChoose->translation.x)
+                if(!maxOfMin || tmp->translation.x < maxOfMin->translation.x)
+                    maxOfMin = tmp;
+            
+        }
+        for(MyObj* tmp : isis)
+        {
+            if(tmp->translation.x > ObjChoose->translation.x)
+                if(!maxOfMin || tmp->translation.x < maxOfMin->translation.x)
+                    maxOfMin = tmp;
+            
+        }
+        for(MyObj* tmp : statue)
+        {
+            if(tmp->translation.x > ObjChoose->translation.x)
+                if(!maxOfMin || tmp->translation.x < maxOfMin->translation.x)
+                    maxOfMin = tmp;
+        }
+        if(maxOfMin)
+            ObjChoose = maxOfMin;
+        return;
+    }
+
 }
 
 
@@ -784,6 +1182,11 @@ void mouse(int button, int state, int x, int y)
 //        default:
 //            break;
     //}
+    if(nowAction == CHOOSE)
+    {
+        if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+            startPicking(x, y);
+    }
     
     glutPostRedisplay();
 }
@@ -990,9 +1393,99 @@ void mouseMotionHandler(int xMouse, int yMouse)
     }
 }
 
-/**************************************************************************
- * Timer function to limit Frames Per Second
- **************************************************************************/
+void startPicking(int cursorX, int cursorY)
+{
+    GLint viewport[4];
+    glSelectBuffer(BUFSIZE, selectBuf);
+    glRenderMode(GL_SELECT);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    gluPickMatrix(cursorX, viewport[3] - cursorY, 10, 10, viewport);
+    gluPerspective(60, 1, 0.1, 1000);
+    glMatrixMode(GL_MODELVIEW);
+    glInitNames();
+    drawThings();
+    stopPicking();
+}
+void stopPicking()
+{
+    int hits;
+    
+    // restoring the original projection matrix
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glFlush();
+    
+    // returning to normal rendering model
+    hits = glRenderMode(GL_RENDER);
+    
+    // if there are hits process them
+    if (hits != 0)
+        processHits(hits, selectBuf);
+}
+bool mypickup[3][3] = { false, false, false, false, false, false, false, false, false };
+bool mypickdo[3][3] = { false, false, false, false, false, false, false, false, false };
+void processHits(GLint hits, GLuint buffer[])
+{
+    GLuint names, *ptr, minZ, *ptrNames, numberOfNames;
+    
+    printf("hits = %d\n", hits);
+    ptr = (GLuint *)buffer;
+    minZ = 0xffffffff;
+    int i, j, m;
+    
+    for (i = 0; i<hits; i++) {
+        names = *ptr;
+        ptr++;
+        
+        if (*ptr < minZ) {
+            numberOfNames = names;
+            minZ = *ptr;
+            ptrNames = ptr + 2;
+        }
+        
+        ptr += names + 2;
+    }
+    
+    printf("The closest hit names are ");
+    ptr = ptrNames;
+    //name: 0:beetles, 10: balls 20:cows 30:isis 40:statue plane:50
+    for (j = 0; j<numberOfNames; j++, ptr++) {
+        printf("%d ", *ptr);
+        m = *ptr;
+        if(m < 10) //beetles
+        {
+            beetlesChoose = beetles[m];
+            isBeetlesChoose = true;
+        }
+        else if(m >= 10 && m < 20) //balls
+        {
+            ObjChoose = ball[m-10];
+            isBeetlesChoose = false;
+        }
+        else if(m >= 20 && m < 30)
+        {
+            ObjChoose = cow[m-20];
+            isBeetlesChoose = false;
+        }
+        else if(m >= 30 && m < 40)
+        {
+            ObjChoose = isis[m-30];
+            isBeetlesChoose = false;
+        }
+        else if(m >= 40 && m < 50)
+        {
+            ObjChoose = statue[m-40];
+            isBeetlesChoose = false;
+        }
+    }
+    printf("\n");
+}
+
+
 void timer(int value)
 {
     if (closeWindow) {
@@ -1004,10 +1497,6 @@ void timer(int value)
     glutPostRedisplay();
 }
 
-
-/**************************************************************************
- * Utility Functions
- **************************************************************************/
 void updateCameraPos()
 {
     // Spherical coordinates formula
@@ -1015,90 +1504,6 @@ void updateCameraPos()
     lookFromy = lookAty + radius * cos(phy*0.0174532);
     lookFromz = lookAtz + radius * sin(phy*0.0174532) * cos(theta*0.0174532);
 }
-/**************************************************************************
- * Bounds calculations
- **************************************************************************/
-
-float* calculateBeetlesBoundingBox(Beetles* mesh)
-{
-    float xmin, xmax, zmin, zmax;
-    
-    // estimate beetles bounding box size
-    float scalefactor = 0.7;
-    
-    xmin = mesh->translation.x - scalefactor;
-    xmax = mesh->translation.x + scalefactor;
-    zmin = mesh->translation.z - scalefactor;
-    zmax = mesh->translation.z + scalefactor;
-    
-    float* bounds = (float*)malloc(4 * sizeof(float));
-    bounds[0] = xmin; bounds[1] = xmax; bounds[2] = zmin; bounds[3] = zmax;
-    
-    return bounds;
-}
-
-
-/**************************************************************************
- * Collision detection functions between two objects
- **************************************************************************/
-
-
-bool checkForBeetlesBeetlesCollision(Beetles* mesh1, Beetles* mesh2)
-{
-    float* beetlesBounds1_ptr = calculateBeetlesBoundingBox(mesh1);
-    float* beetlesBounds2_ptr = calculateBeetlesBoundingBox(mesh2);
-    
-    float beetlesBounds1[] = {beetlesBounds1_ptr[0], beetlesBounds1_ptr[1], beetlesBounds1_ptr[2], beetlesBounds1_ptr[3]};
-    float beetlesBounds2[] = {beetlesBounds2_ptr[0], beetlesBounds2_ptr[1], beetlesBounds2_ptr[2], beetlesBounds2_ptr[3]};
-    
-    free(beetlesBounds1_ptr); free(beetlesBounds2_ptr);
-    
-    bool collision = false;
-    float margin = 0.0;
-    
-    // xmin of mesh 1 <= xmax of mesh2 AND xmax of mesh 1 >= xmin of mesh 2
-    if (beetlesBounds1[0] - margin < beetlesBounds2[1] && beetlesBounds1[1] + margin > beetlesBounds2[0])
-        // zmin of mesh 1 <= zmax of mesh2 AND zmax of mesh 1 >= zmin of mesh 2
-        if (beetlesBounds1[2] - margin < beetlesBounds2[3] && beetlesBounds1[3] + margin > beetlesBounds2[2])
-            collision = true;  // collision detected
-    
-    return collision;
-}
-
-/**************************************************************************
- * Collision detection functions between one object and several
- **************************************************************************/
-bool checkBeetlesCollisionWithEnemyBeetlessAndBuildings(Beetles* selectedBeetles)
-{
-    bool collision = false;
-    for (int i = 0; i < num_of_beetless; i++) {
-        if (i == selected_beetles)
-            continue;
-        if (checkForBeetlesBeetlesCollision(selectedBeetles, beetles[i]))
-            collision = true;
-    }
-    
-    return collision;
-}
-
-bool checkEnemyBeetlesCollisionWithEnemyBeetlessAndBuildings(Beetles* enemyBeetles, int enemyBeetlesIndex)
-{
-    bool collision = false;
-    
-    for (int i = 0; i < num_of_beetless; i++) {
-        if (i == enemyBeetlesIndex)
-            continue;
-        if (checkForBeetlesBeetlesCollision(enemyBeetles, beetles[i]))
-            collision = true;
-    }
-    
-    return collision;
-}
-
-
-/**************************************************************************
- * Limit Camera angle
- **************************************************************************/
 void limitCameraAngle()
 {
     if (phy > 80)
@@ -1106,10 +1511,7 @@ void limitCameraAngle()
     if (phy < 30)
         phy = 30;
 }
-/* Handles input from the keyboard, non-arrow keys */
-
-
-
+bool flag = false;
 void animationFunction (float delta_time) {
     static float distance = 0.2 * delta_time;
     static float angle = 2.0 * delta_time;
@@ -1117,8 +1519,9 @@ void animationFunction (float delta_time) {
     for(int i =0; i < num_of_beetless; i++) {
         if (i != selected_beetles && !beetles[i]->hit) {
             animator[i]->animate(distance,angle);
-            if (checkEnemyBeetlesCollisionWithEnemyBeetlessAndBuildings(beetles[i], i)) {
+            if (flag) {
                 animator[i]->animate(-distance,angle);
+                flag = ~flag;
             }
         }
     }
