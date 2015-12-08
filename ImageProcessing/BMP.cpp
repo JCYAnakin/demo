@@ -1275,7 +1275,692 @@ void BMP::logarithmicRGBEach(FILE *fpw)
     }
     cout<<"logarithmicRGB finish!"<<endl;
 }
+void BMP::translation(FILE *fpw)
+{
+    int xTrans, yTrans;
+    cout<<"Please input the x, y translation:"<<endl;
+    cin>>xTrans;
+    cin>>yTrans;
+    head newHead = thisHead;
+    information newInfo = thisInfo;
+    newInfo.col+=abs(yTrans);
+    newInfo.row+=abs(xTrans);
+    int sizeIncrease = (thisInfo.col*xTrans+thisInfo.row*yTrans+yTrans*xTrans)*3;
+    newInfo.imageSize += sizeIncrease;
+    newHead.size += sizeIncrease;
+    
+    unsigned short BMPIndicator= 0x4d42;
+    fwrite(&BMPIndicator,1,sizeof(unsigned short),fpw);
+    fwrite(&newHead,1,sizeof(head),fpw);
+    fwrite(&newInfo,1,sizeof(information),fpw);
+    int position = 0;
+    unsigned int nBytesInRow = ((3 * newInfo.col + 3)/4) * 4;
+    unsigned int numPadBytes = nBytesInRow - 3 * newInfo.col; // need this many
+    int dark = 0;
+    if(xTrans < 0)
+    {
+        for(int i = 0; i < -xTrans; i++)
+        {
+            for(int j = 0; j < thisInfo.col + abs(yTrans); j++)
+            {
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+            }
+            int dump = 0;
+            for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+            {
+                fwrite(&dump, 1, sizeof(unsigned char), fpw);
+            }
+            
+        }
+    }
+    
+    for(int i = 0; i < thisInfo.row; i++)
+    {
+        if(yTrans > 0)
+        {
+            for(int j = 0; j < yTrans; j++)
+            {
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+            }
+        }
+        for(int j = 0; j < thisInfo.col; j++)
+        {
+//            int tmpR, tmpG, tmpB;
+            fwrite(&(bList[position]), 1, sizeof(unsigned char), fpw);
+            fwrite(&(gList[position]), 1, sizeof(unsigned char), fpw);
+            fwrite(&(rList[position]), 1, sizeof(unsigned char), fpw);
+            position++;
+        }
+        if(yTrans < 0)
+        {
+            for(int j = 0; j < -yTrans; j++)
+            {
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+            }
+        }
+        int dump = 0;
+        for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+        {
+            fwrite(&dump, 1, sizeof(unsigned char), fpw);
+        }
+    }
+    if(xTrans > 0)
+    {
+        for(int i = 0; i < xTrans; i++)
+        {
+            for(int j = 0; j < thisInfo.col + abs(yTrans); j++)
+            {
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+                fwrite(&(dark), 1, sizeof(unsigned char), fpw);
+            }
+            int dump = 0;
+            for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+            {
+                fwrite(&dump, 1, sizeof(unsigned char), fpw);
+            }
+            
+        }
+    }
+    cout<<"Translation finish!"<<endl;
+}
+void BMP::mirror(FILE *fpw)
+{
+    char c;
+    bool isH;
+    cout<<"H or V?:"<<endl;
+    cin>>c;
+    if(c == 'H'||c == 'h')
+        isH = true;
+    else if(c == 'V' || c== 'v')
+        isH = false;
+    else{
+        cout<<"Input error! please input 'h/H' or 'v/V'!"<<endl;
+    }
+//    head newHead = thisHead;
+//    information newInfo = thisInfo;
+//    if(isH)
+//        newInfo.col+=thisInfo.col;
+//    else
+//        newInfo.row+=thisInfo.row;
+//    newInfo.imageSize += thisInfo.imageSize;
+//    newHead.size += thisInfo.imageSize;
+    
+    unsigned short BMPIndicator= 0x4d42;
+    fwrite(&BMPIndicator,1,sizeof(unsigned short),fpw);
+//    fwrite(&newHead,1,sizeof(head),fpw);
+//    fwrite(&newInfo,1,sizeof(information),fpw);
+    fwrite(&thisHead,1,sizeof(head),fpw);
+    fwrite(&thisInfo,1,sizeof(information),fpw);
 
+    int position = 0;
+    unsigned int nBytesInRow, numPadBytes;
+//    if(isH)
+//    {
+//        nBytesInRow = ((3 * newInfo.col + 3)/4) * 4;
+//        numPadBytes = nBytesInRow - 3 * newInfo.col;
+//    }
+//    else
+//    {
+        nBytesInRow = ((3 * thisInfo.col + 3)/4) * 4;
+        numPadBytes = nBytesInRow - 3 * thisInfo.col;
+//    }
+    
+    if(isH)
+    {
+        for(int i = 0; i < thisInfo.row; i++)
+        {
+            position+=thisInfo.col;
+//            for(int j = 0; j < thisInfo.col; j++)
+//            {
+//                fwrite(&(bList[position]), 1, sizeof(unsigned char), fpw);
+//                fwrite(&(gList[position]), 1, sizeof(unsigned char), fpw);
+//                fwrite(&(rList[position]), 1, sizeof(unsigned char), fpw);
+//                position++;
+//            }
+            int positionSave = position;
+            for(int j = 0; j < thisInfo.col; j++)
+            {
+                fwrite(&(bList[position]), 1, sizeof(unsigned char), fpw);
+                fwrite(&(gList[position]), 1, sizeof(unsigned char), fpw);
+                fwrite(&(rList[position]), 1, sizeof(unsigned char), fpw);
+                position--;
+            }
+            position = positionSave;
+            int dump = 0;
+            for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+            {
+                fwrite(&dump, 1, sizeof(unsigned char), fpw);
+            }
+        }
+    }
+    else{
+        position = (thisInfo.row-1) * thisInfo.col;
+        for(int i = 0; i < thisInfo.row; i++)
+        {
+            for(int j = 0; j < thisInfo.col; j++)
+            {
+                fwrite(&(bList[position]), 1, sizeof(unsigned char), fpw);
+                fwrite(&(gList[position]), 1, sizeof(unsigned char), fpw);
+                fwrite(&(rList[position]), 1, sizeof(unsigned char), fpw);
+                position++;
+            }
+            position-=(2*thisInfo.col);
+            int dump = 0;
+            for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+            {
+                fwrite(&dump, 1, sizeof(unsigned char), fpw);
+            }
+        }
+//        position = 0;
+//        for(int i = 0; i < thisInfo.row; i++)
+//        {
+//            for(int j = 0; j < thisInfo.col; j++)
+//            {
+//                fwrite(&(bList[position]), 1, sizeof(unsigned char), fpw);
+//                fwrite(&(gList[position]), 1, sizeof(unsigned char), fpw);
+//                fwrite(&(rList[position]), 1, sizeof(unsigned char), fpw);
+//                position++;
+//            }
+//            int dump = 0;
+//            for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+//            {
+//                fwrite(&dump, 1, sizeof(unsigned char), fpw);
+//            }
+//        }
+    }
+        cout<<"Mirror finish!"<<endl;
+}
+//xSize: col!
+int twoDimensionToOne(int xCoor, int yCoor, int xSize, int ySize)
+{
+    return yCoor*xSize+xCoor;
+}
+//int oneDimensionToTwo(int coorOneDimesion, int xSize, int ySize, bool isX)
+//{
+//    int a[2], tmp = coorOneDimesion, count = 0;
+//    while(tmp >= 0)
+//    {
+//        tmp -= xSize;
+//        count++;
+//    }
+//    count--;
+//    //y
+//    a[1] = count;
+//    //x
+//    a[0] = coorOneDimesion - count * xSize;
+//    if(isX)
+//        return a[0];
+//    else
+//        return a[1];
+//}
+void oneDimensionToTwo(int coorOneDimesion, int xSize, int ySize, int* res)
+{
+    int tmp = coorOneDimesion, count = 0;
+    while(tmp >= 0)
+    {
+        tmp -= xSize;
+        count++;
+    }
+    count--;
+    //y
+    res[1] = count;
+    //x
+    res[0] = coorOneDimesion - count * xSize;
+}
+
+void BMP::scale(FILE *fpw)
+{
+    double xScale, yScale;
+    cout<<"Please input the x, y Scale factors:"<<endl;
+    cin>>xScale;
+    cin>>yScale;
+    head newHead = thisHead;
+    information newInfo = thisInfo;
+    newInfo.col *= xScale;
+    newInfo.row *= yScale;
+    newInfo.imageSize *= xScale*yScale;
+    newHead.size = newInfo.imageSize+54;
+    
+    unsigned short BMPIndicator= 0x4d42;
+    fwrite(&BMPIndicator,1,sizeof(unsigned short),fpw);
+    fwrite(&newHead,1,sizeof(head),fpw);
+    fwrite(&newInfo,1,sizeof(information),fpw);
+    
+    unsigned char* newrList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    unsigned char* newgList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    unsigned char* newbList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    
+    int position = 0;
+    int previousPosition = 0;
+    for(int i = 0; i < newInfo.row; i++)
+    {
+        for(int j = 0; j < newInfo.col; j++)
+        {
+            int coor[2];
+            oneDimensionToTwo(position, newInfo.col, newInfo.row, coor);
+            double xCoorPre = coor[0] / xScale;
+            double yCoorPre = coor[1] / yScale;
+            //interpolation
+            if(xCoorPre != (int)xCoorPre || yCoorPre != (int)yCoorPre)
+            {
+                unsigned char fr1R, fr1G, fr1B, fr2R, fr2G, fr2B, fpR, fpG, fpB;
+                int CoorPre11 = twoDimensionToOne((int)xCoorPre, (int)yCoorPre, thisInfo.col, thisInfo.row);
+                int CoorPre12 = twoDimensionToOne((int)xCoorPre, (int)yCoorPre+1, thisInfo.col, thisInfo.row);
+                int CoorPre21 = twoDimensionToOne((int)xCoorPre+1, (int)yCoorPre, thisInfo.col, thisInfo.row);
+                int CoorPre22 = twoDimensionToOne((int)xCoorPre+1, (int)yCoorPre+1, thisInfo.col, thisInfo.row);
+                double xMinusx1 = xCoorPre-(int)xCoorPre;
+                double x2Minusx = 1-xMinusx1;
+                double yMinusy1 = yCoorPre-(int)yCoorPre;
+                double y2Minusy = 1-yMinusy1;
+                
+                if(xCoorPre > thisInfo.col - 1)
+                {
+                    fr1R = y2Minusy*rList[CoorPre21] + yMinusy1*rList[CoorPre22];
+                    fr1G = y2Minusy*gList[CoorPre21] + yMinusy1*gList[CoorPre22];
+                    fr1B = y2Minusy*bList[CoorPre21] + yMinusy1*bList[CoorPre22];
+                    newrList[position] = fr1R;
+                    newgList[position] = fr1G;
+                    newbList[position] = fr1B;
+                }
+                if(yCoorPre > thisInfo.row - 1)
+                {
+                    fr1R = x2Minusx*rList[CoorPre11] + xMinusx1*rList[CoorPre21];
+                    fr1G = x2Minusx*gList[CoorPre11] + xMinusx1*gList[CoorPre21];
+                    fr1B = x2Minusx*bList[CoorPre11] + xMinusx1*bList[CoorPre21];
+                    newrList[position] = fr1R;
+                    newgList[position] = fr1G;
+                    newbList[position] = fr1B;
+                }
+                else
+                {
+                    fr1R = x2Minusx*rList[CoorPre11] + xMinusx1*rList[CoorPre21];
+                    fr1G = x2Minusx*gList[CoorPre11] + xMinusx1*gList[CoorPre21];
+                    fr1B = x2Minusx*bList[CoorPre11] + xMinusx1*bList[CoorPre21];
+                    fr2R = x2Minusx*rList[CoorPre12] + xMinusx1*rList[CoorPre22];
+                    fr2G = x2Minusx*gList[CoorPre12] + xMinusx1*gList[CoorPre22];
+                    fr2B = x2Minusx*bList[CoorPre12] + xMinusx1*bList[CoorPre22];
+                    fpR = y2Minusy*fr1R+yMinusy1*fr2R;
+                    fpG = y2Minusy*fr1G+yMinusy1*fr2G;
+                    fpB = y2Minusy*fr1B+yMinusy1*fr2B;
+                    
+                    newrList[position] = fpR;
+                    newgList[position] = fpG;
+                    newbList[position] = fpB;
+                }
+            }
+            else{
+                previousPosition = twoDimensionToOne((int)xCoorPre, (int)yCoorPre, thisInfo.col, thisInfo.row);
+                newrList[position] = rList[previousPosition];
+                newgList[position] = gList[previousPosition];
+                newbList[position] = bList[previousPosition];
+            }
+            position++;
+        }
+    }
+    //write to file
+    position = 0;
+    unsigned int nBytesInRow = ((3 * newInfo.col + 3)/4) * 4;
+    unsigned int numPadBytes = nBytesInRow - 3 * newInfo.col; // need this many
+    for(int i = 0; i < newInfo.row; i++)
+    {
+        for(int j = 0; j < newInfo.col; j++)
+        {
+            fwrite(&(newbList[position]), 1, sizeof(unsigned char), fpw);
+            fwrite(&(newgList[position]), 1, sizeof(unsigned char), fpw);
+            fwrite(&(newrList[position]), 1, sizeof(unsigned char), fpw);
+            position++;
+        }
+        int dump = 0;
+        for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+        {
+            fwrite(&dump, 1, sizeof(unsigned char), fpw);
+        }
+    }
+
+    cout<<"Scale finish!"<<endl;
+}
+void BMP::scaleWithoutIn(FILE *fpw)
+{
+    double xScale, yScale;
+    cout<<"Please input the x, y Scale factors:"<<endl;
+    cin>>xScale;
+    cin>>yScale;
+    head newHead = thisHead;
+    information newInfo = thisInfo;
+    newInfo.col *= xScale;
+    newInfo.row *= yScale;
+    newInfo.imageSize *= xScale*yScale;
+    newHead.size = newInfo.imageSize+54;
+    
+    unsigned short BMPIndicator= 0x4d42;
+    fwrite(&BMPIndicator,1,sizeof(unsigned short),fpw);
+    fwrite(&newHead,1,sizeof(head),fpw);
+    fwrite(&newInfo,1,sizeof(information),fpw);
+    
+    unsigned char* newrList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    unsigned char* newgList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    unsigned char* newbList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    
+    int position = 0;
+    int previousPosition = 0;
+    for(int i = 0; i < newInfo.row; i++)
+    {
+        for(int j = 0; j < newInfo.col; j++)
+        {
+            int coor[2];
+            oneDimensionToTwo(position, newInfo.col, newInfo.row, coor);
+            int xCoorPre = coor[0] / xScale;
+            int yCoorPre = coor[1] / yScale;
+            previousPosition = twoDimensionToOne(xCoorPre, yCoorPre, thisInfo.col, thisInfo.row);
+            newrList[position] = rList[previousPosition];
+            newgList[position] = gList[previousPosition];
+            newbList[position] = bList[previousPosition];
+            position++;
+        }
+    }
+    //write to file
+    position = 0;
+    unsigned int nBytesInRow = ((3 * newInfo.col + 3)/4) * 4;
+    unsigned int numPadBytes = nBytesInRow - 3 * newInfo.col; // need this many
+    for(int i = 0; i < newInfo.row; i++)
+    {
+        for(int j = 0; j < newInfo.col; j++)
+        {
+            fwrite(&(newbList[position]), 1, sizeof(unsigned char), fpw);
+            fwrite(&(newgList[position]), 1, sizeof(unsigned char), fpw);
+            fwrite(&(newrList[position]), 1, sizeof(unsigned char), fpw);
+            position++;
+        }
+        int dump = 0;
+        for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+        {
+            fwrite(&dump, 1, sizeof(unsigned char), fpw);
+        }
+    }
+    
+    cout<<"Scale finish!"<<endl;
+}
+#define PI 3.141592653
+
+void BMP::rotation(FILE *fpw)
+{
+    //x' = xcos - ysin
+    //y' = xsin + ycos
+    //x = x'cos + y'sin
+    //y = x'sin - y'cos
+    double theta;
+    cout<<"Please input theta:"<<endl;
+    cin>>theta;
+    theta = ((theta+180)*PI)/180;
+    double cosTheta = cos(theta);
+    double sinTheta = sin(theta);
+    int xmax, ymax; //xmin, ymin;
+    
+    int xmaxpre = thisInfo.col/2, ymaxpre = thisInfo.row/2;
+    int tmpx[4], tmpy[4];
+    //get the xmax, ymax, x
+    tmpx[0] = xmaxpre * cosTheta - ymaxpre * sinTheta;
+    tmpx[1] = (-xmaxpre * cosTheta) - ymaxpre * sinTheta;
+    tmpx[2] = xmaxpre * cosTheta - (-ymaxpre * sinTheta);
+    tmpx[3] = (-xmaxpre * cosTheta) - (-ymaxpre * sinTheta);
+    xmax = (tmpx[0]>tmpx[1]&&tmpx[0]>tmpx[2]&&tmpx[0]>tmpx[3])?tmpx[0]:(tmpx[1]>tmpx[0]&&tmpx[1]>tmpx[2]&&tmpx[1]>tmpx[3])?tmpx[1]:(tmpx[2]>tmpx[1]&&tmpx[2]>tmpx[0]&&tmpx[2]>tmpx[3])?tmpx[2]:tmpx[3];
+    tmpy[0] = xmaxpre * sinTheta + ymaxpre * cosTheta;
+    tmpy[1] = (-xmaxpre * sinTheta) + ymaxpre * cosTheta;
+    tmpy[2] = xmaxpre * sinTheta + (-ymaxpre * cosTheta);
+    tmpy[3] = (-xmaxpre * sinTheta) + (-ymaxpre * cosTheta);
+    ymax = (tmpy[0]>tmpy[1]&&tmpy[0]>tmpy[2]&&tmpy[0]>tmpy[3])?tmpy[0]:(tmpy[1]>tmpy[0]&&tmpy[1]>tmpy[2]&&tmpy[1]>tmpy[3])?tmpy[1]:(tmpy[2]>tmpy[1]&&tmpy[2]>tmpy[0]&&tmpy[2]>tmpy[3])?tmpy[2]:tmpy[3];
+    
+    head newHead = thisHead;
+    information newInfo = thisInfo;
+    newInfo.col = xmax*2;
+    newInfo.row = ymax*2;
+    newInfo.imageSize *= (xmax*2/thisInfo.col)*(ymax*2/thisInfo.row);
+    newHead.size = newInfo.imageSize+54;
+    
+    unsigned short BMPIndicator= 0x4d42;
+    fwrite(&BMPIndicator,1,sizeof(unsigned short),fpw);
+    fwrite(&newHead,1,sizeof(head),fpw);
+    fwrite(&newInfo,1,sizeof(information),fpw);
+    
+    unsigned char* newrList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    unsigned char* newgList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    unsigned char* newbList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    
+    int position = 0;
+    int previousPosition = 0;
+    for(int i = 0; i < newInfo.row; i++)
+    {
+        for(int j = 0; j < newInfo.col; j++)
+        {
+            //x = x'cos + y'sin
+            //y = x'sin - y'cos
+            int coor[2];
+            oneDimensionToTwo(position, newInfo.col, newInfo.row, coor);
+            coor[0]-=xmax;
+            coor[1]-=ymax;
+            double xCoorPre = coor[0]*cosTheta+coor[1]*sinTheta;
+            double yCoorPre = coor[0]*sinTheta-coor[1]*cosTheta;
+            xCoorPre+=xmaxpre;
+            yCoorPre+=ymaxpre;
+            if(xCoorPre<0||xCoorPre>thisInfo.col||yCoorPre<0||yCoorPre>thisInfo.row)
+            {
+                newrList[position] = 0;
+                newgList[position] = 0;
+                newbList[position] = 0;
+            }
+            //interpolation
+            else if(xCoorPre != (int)xCoorPre || yCoorPre != (int)yCoorPre)
+            {
+                unsigned char fr1R, fr1G, fr1B, fr2R, fr2G, fr2B, fpR, fpG, fpB;
+                int CoorPre11 = twoDimensionToOne((int)xCoorPre, (int)yCoorPre, thisInfo.col, thisInfo.row);
+                int CoorPre12 = twoDimensionToOne((int)xCoorPre, (int)yCoorPre+1, thisInfo.col, thisInfo.row);
+                int CoorPre21 = twoDimensionToOne((int)xCoorPre+1, (int)yCoorPre, thisInfo.col, thisInfo.row);
+                int CoorPre22 = twoDimensionToOne((int)xCoorPre+1, (int)yCoorPre+1, thisInfo.col, thisInfo.row);
+                double xMinusx1 = xCoorPre-(int)xCoorPre;
+                double x2Minusx = 1-xMinusx1;
+                double yMinusy1 = yCoorPre-(int)yCoorPre;
+                double y2Minusy = 1-yMinusy1;
+                
+                if(xCoorPre > thisInfo.col - 1)
+                {
+                    fr1R = y2Minusy*rList[CoorPre21] + yMinusy1*rList[CoorPre22];
+                    fr1G = y2Minusy*gList[CoorPre21] + yMinusy1*gList[CoorPre22];
+                    fr1B = y2Minusy*bList[CoorPre21] + yMinusy1*bList[CoorPre22];
+                    newrList[position] = fr1R;
+                    newgList[position] = fr1G;
+                    newbList[position] = fr1B;
+                }
+                if(yCoorPre > thisInfo.row - 1)
+                {
+                    fr1R = x2Minusx*rList[CoorPre11] + xMinusx1*rList[CoorPre21];
+                    fr1G = x2Minusx*gList[CoorPre11] + xMinusx1*gList[CoorPre21];
+                    fr1B = x2Minusx*bList[CoorPre11] + xMinusx1*bList[CoorPre21];
+                    newrList[position] = fr1R;
+                    newgList[position] = fr1G;
+                    newbList[position] = fr1B;
+                }
+                else
+                {
+                    fr1R = x2Minusx*rList[CoorPre11] + xMinusx1*rList[CoorPre21];
+                    fr1G = x2Minusx*gList[CoorPre11] + xMinusx1*gList[CoorPre21];
+                    fr1B = x2Minusx*bList[CoorPre11] + xMinusx1*bList[CoorPre21];
+                    fr2R = x2Minusx*rList[CoorPre12] + xMinusx1*rList[CoorPre22];
+                    fr2G = x2Minusx*gList[CoorPre12] + xMinusx1*gList[CoorPre22];
+                    fr2B = x2Minusx*bList[CoorPre12] + xMinusx1*bList[CoorPre22];
+                    fpR = y2Minusy*fr1R+yMinusy1*fr2R;
+                    fpG = y2Minusy*fr1G+yMinusy1*fr2G;
+                    fpB = y2Minusy*fr1B+yMinusy1*fr2B;
+                    
+                    newrList[position] = fpR;
+                    newgList[position] = fpG;
+                    newbList[position] = fpB;
+                }
+            }
+            else{
+                previousPosition = twoDimensionToOne((int)xCoorPre, (int)yCoorPre, thisInfo.col, thisInfo.row);
+                newrList[position] = rList[previousPosition];
+                newgList[position] = gList[previousPosition];
+                newbList[position] = bList[previousPosition];
+            }
+            position++;
+        }
+    }
+    //write to file
+    position = 0;
+    unsigned int nBytesInRow = ((3 * newInfo.col + 3)/4) * 4;
+    unsigned int numPadBytes = nBytesInRow - 3 * newInfo.col; // need this many
+    for(int i = 0; i < newInfo.row; i++)
+    {
+        for(int j = 0; j < newInfo.col; j++)
+        {
+            fwrite(&(newbList[position]), 1, sizeof(unsigned char), fpw);
+            fwrite(&(newgList[position]), 1, sizeof(unsigned char), fpw);
+            fwrite(&(newrList[position]), 1, sizeof(unsigned char), fpw);
+            position++;
+        }
+        int dump = 0;
+        for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+        {
+            fwrite(&dump, 1, sizeof(unsigned char), fpw);
+        }
+    }
+    
+    cout<<"Rotate finish!"<<endl;
+}
+void BMP::shear(FILE *fpw)
+{
+    double dx, dy;
+    cout<<"Please input dx, dy: "<<endl;
+    cin>>dx;
+    cin>>dy;
+    int xmax, ymax; //xmin, ymin;
+    int xmaxpre = thisInfo.col/2, ymaxpre = thisInfo.row/2;
+    //get the xmax, ymax, x
+    xmax = xmaxpre + dx * ymaxpre;
+    ymax = ymaxpre + dy * xmaxpre;
+    
+    head newHead = thisHead;
+    information newInfo = thisInfo;
+    newInfo.col = xmax*2;
+    newInfo.row = ymax*2;
+    newInfo.imageSize *= (xmax*2/thisInfo.col)*(ymax*2/thisInfo.row);
+    newHead.size = newInfo.imageSize+54;
+    
+    unsigned short BMPIndicator= 0x4d42;
+    fwrite(&BMPIndicator,1,sizeof(unsigned short),fpw);
+    fwrite(&newHead,1,sizeof(head),fpw);
+    fwrite(&newInfo,1,sizeof(information),fpw);
+    
+    unsigned char* newrList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    unsigned char* newgList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    unsigned char* newbList = (unsigned char*)malloc(newInfo.col*newInfo.row*sizeof(unsigned char));
+    
+    int position = 0;
+    int previousPosition = 0;
+    for(int i = 0; i < newInfo.row; i++)
+    {
+        for(int j = 0; j < newInfo.col; j++)
+        {
+            int coor[2];
+            oneDimensionToTwo(position, newInfo.col, newInfo.row, coor);
+            coor[0]-=xmax;
+            coor[1]-=ymax;
+            double xCoorPre = (dx*coor[1]-coor[0])/(dx*dy-1);
+            double yCoorPre = (dy*coor[0]-coor[1])/(dx*dy-1);
+            xCoorPre+=xmaxpre;
+            yCoorPre+=ymaxpre;
+            if(xCoorPre<0||xCoorPre>thisInfo.col||yCoorPre<0||yCoorPre>thisInfo.row)
+            {
+                newrList[position] = 0;
+                newgList[position] = 0;
+                newbList[position] = 0;
+            }
+            //interpolation
+            else if(xCoorPre != (int)xCoorPre || yCoorPre != (int)yCoorPre)
+            {
+                unsigned char fr1R, fr1G, fr1B, fr2R, fr2G, fr2B, fpR, fpG, fpB;
+                int CoorPre11 = twoDimensionToOne((int)xCoorPre, (int)yCoorPre, thisInfo.col, thisInfo.row);
+                int CoorPre12 = twoDimensionToOne((int)xCoorPre, (int)yCoorPre+1, thisInfo.col, thisInfo.row);
+                int CoorPre21 = twoDimensionToOne((int)xCoorPre+1, (int)yCoorPre, thisInfo.col, thisInfo.row);
+                int CoorPre22 = twoDimensionToOne((int)xCoorPre+1, (int)yCoorPre+1, thisInfo.col, thisInfo.row);
+                double xMinusx1 = xCoorPre-(int)xCoorPre;
+                double x2Minusx = 1-xMinusx1;
+                double yMinusy1 = yCoorPre-(int)yCoorPre;
+                double y2Minusy = 1-yMinusy1;
+                
+                if(xCoorPre > thisInfo.col - 1)
+                {
+                    fr1R = y2Minusy*rList[CoorPre21] + yMinusy1*rList[CoorPre22];
+                    fr1G = y2Minusy*gList[CoorPre21] + yMinusy1*gList[CoorPre22];
+                    fr1B = y2Minusy*bList[CoorPre21] + yMinusy1*bList[CoorPre22];
+                    newrList[position] = fr1R;
+                    newgList[position] = fr1G;
+                    newbList[position] = fr1B;
+                }
+                if(yCoorPre > thisInfo.row - 1)
+                {
+                    fr1R = x2Minusx*rList[CoorPre11] + xMinusx1*rList[CoorPre21];
+                    fr1G = x2Minusx*gList[CoorPre11] + xMinusx1*gList[CoorPre21];
+                    fr1B = x2Minusx*bList[CoorPre11] + xMinusx1*bList[CoorPre21];
+                    newrList[position] = fr1R;
+                    newgList[position] = fr1G;
+                    newbList[position] = fr1B;
+                }
+                else
+                {
+                    fr1R = x2Minusx*rList[CoorPre11] + xMinusx1*rList[CoorPre21];
+                    fr1G = x2Minusx*gList[CoorPre11] + xMinusx1*gList[CoorPre21];
+                    fr1B = x2Minusx*bList[CoorPre11] + xMinusx1*bList[CoorPre21];
+                    fr2R = x2Minusx*rList[CoorPre12] + xMinusx1*rList[CoorPre22];
+                    fr2G = x2Minusx*gList[CoorPre12] + xMinusx1*gList[CoorPre22];
+                    fr2B = x2Minusx*bList[CoorPre12] + xMinusx1*bList[CoorPre22];
+                    fpR = y2Minusy*fr1R+yMinusy1*fr2R;
+                    fpG = y2Minusy*fr1G+yMinusy1*fr2G;
+                    fpB = y2Minusy*fr1B+yMinusy1*fr2B;
+                    
+                    newrList[position] = fpR;
+                    newgList[position] = fpG;
+                    newbList[position] = fpB;
+                }
+            }
+            else{
+                previousPosition = twoDimensionToOne((int)xCoorPre, (int)yCoorPre, thisInfo.col, thisInfo.row);
+                newrList[position] = rList[previousPosition];
+                newgList[position] = gList[previousPosition];
+                newbList[position] = bList[previousPosition];
+            }
+            position++;
+        }
+    }
+    //write to file
+    position = 0;
+    unsigned int nBytesInRow = ((3 * newInfo.col + 3)/4) * 4;
+    unsigned int numPadBytes = nBytesInRow - 3 * newInfo.col; // need this many
+    for(int i = 0; i < newInfo.row; i++)
+    {
+        for(int j = 0; j < newInfo.col; j++)
+        {
+            fwrite(&(newbList[position]), 1, sizeof(unsigned char), fpw);
+            fwrite(&(newgList[position]), 1, sizeof(unsigned char), fpw);
+            fwrite(&(newrList[position]), 1, sizeof(unsigned char), fpw);
+            position++;
+        }
+        int dump = 0;
+        for(int k = 0; k < numPadBytes ; k++) //skip pad bytes at row's end
+        {
+            fwrite(&dump, 1, sizeof(unsigned char), fpw);
+        }
+    }
+    cout<<"Shear finish!"<<endl;
+    
+}
 
 
 

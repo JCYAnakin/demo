@@ -89,6 +89,13 @@ public:
     void logarithmic(FILE* fpw);
     void logarithmicRGB(FILE* fpw);
     void logarithmicRGBEach(FILE* fpw);
+    
+    void translation(FILE* fpw);
+    void rotation(FILE* fpw);
+    void scale(FILE* fpw);
+    void scaleWithoutIn(FILE* fpw);
+    void shear(FILE* fpw);
+    void mirror(FILE* fpw);
 };
 
 #endif /* BMP_hpp */
